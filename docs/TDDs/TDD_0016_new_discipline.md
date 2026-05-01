@@ -67,7 +67,7 @@ Se definirá la entidad `Discipline` con las siguientes propiedades y restriccio
 
 | Escenario                   | Resultado Esperado                            | Código HTTP               |
 | ----------------------------| --------------------------------------------- | ------------------------- |
-| `member_id` inexistente          | Mensaje: "El miembro indicado no existe"   | 404 Not found              |
+| `member_id` inexistente          | Mensaje: "El miembro indicado no existe"   | 404 Not Found              |
 | Fecha con formato inválido | Mensaje: "Formato de fecha inválido"| 400 Bad Request        |
 | `expiry_date` anterior a `issue_date` | Mensaje: "La fecha de fin de suspensión no puede ser previa a la fecha de inicio"| 400 Bad Request           |
 | Error de conexión a DB     | Mensaje: "Error interno, reintente más tarde" | 500 Internal Server Error |
