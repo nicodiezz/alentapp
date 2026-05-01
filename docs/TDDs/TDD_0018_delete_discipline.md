@@ -46,8 +46,8 @@ Al tratarse de una operación destructiva que solo requiere conocer el identific
 
 | Escenario                  | Resultado Esperado                            | Código HTTP actual        |
 | -------------------------- | --------------------------------------------- | ------------------------- |
-| Suspensión inexistente          | Mensaje: "La suspensión no existe"               | 400 Bad Request           |
-| Error de conexión a DB     | Mensaje: error del motor de base de datos     | 400 Bad Request           |
+| Suspensión inexistente          | Mensaje: "La suspensión no existe"               | 404 Not Found           |
+| Error de conexión a DB     | Mensaje: error del motor de base de datos     | 500 Internal Server Error           |
 | Eliminación exitosa        | Respuesta vacía                               | 204 No Content            |
 
 ## Plan de Implementación
