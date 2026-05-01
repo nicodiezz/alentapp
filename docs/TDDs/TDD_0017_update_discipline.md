@@ -23,6 +23,7 @@ Permitir a los administrativos modificar la información de una suspensión exis
 
 - El sistema debe permitir actualizar uno, varios o todos los campos de la suspensión.
 - El sistema debe validar que, si se cambia alguna de las fechas, la fecha de inicio sea anterior a la fecha de fin.
+- El sistema debe validar que, si se cambia el member_id, exista un miembro con ese member_id.
 - El sistema debe validar que la suspensión a actualizar exista.
 - Si la edición es correcta, debe retornar los nuevos datos de la suspensión actualizados.
 
@@ -56,7 +57,7 @@ Se utilizará el paquete compartido para definir el cuerpo de la petición. Todo
 ## Casos de Borde y Errores
 | Escenario                  | Resultado Esperado                            | Código HTTP actual        |
 | -------------------------- | --------------------------------------------- | ------------------------- |
-| Suspensión inexistente          | Mensaje: "La suspensión no existe"               | 400 Bad Request           |
+| Suspensión inexistente          | Mensaje: "La suspensión no existe"               | 404 Not Found           |
 | `expiry_date` anterior a `issue_date` | Mensaje: "La fecha de fin de suspensión no puede ser previa a la fecha de inicio"| 400 Bad Request           |
 | Fecha con formato inválido | Mensaje: "Formato de fecha inválido"| 400 Bad Request        |
 | Error de conexión a DB     | Mensaje: "Error interno, reintente más tarde" | 500 Internal Server Error |
