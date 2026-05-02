@@ -33,7 +33,7 @@ Permitir a los administrativos modificar la información de una suspensión exis
 
 Se utilizará el paquete compartido para definir el cuerpo de la petición. Todos los campos son opcionales ya que se trata de una actualización parcial (PATCH a nivel de negocio, aunque el endpoint implemente PUT).
 
-- Endpoint: `PUT /api/v1/discipline/:id`
+- Endpoint: `PUT /api/v1/disciplines/:id`
 - Request Body (UpdateDisciplineRequest):
 
 ```ts
