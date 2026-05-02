@@ -32,7 +32,7 @@ Permitir al administrativo modificar la informacion de un certificado medico exi
 
 Se utilizará el paquete compartido para definir el cuerpo de la petición. Todos los campos son opcionales ya que se trata de una actualización parcial (PATCH a nivel de negocio, aunque el endpoint implemente PUT).
 
-- Endpoint: `PUT /api/v1/medical-certificate/:id`
+- Endpoint: `PUT /api/v1/medical-certificates/:id`
 - Request Body (UpdateMedicalCertificateRequest):
 
 ```ts
