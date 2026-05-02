@@ -31,7 +31,7 @@ Permitir a los administrativos dar de baja permanentemente a una suspensión del
 
 Al tratarse de una operación destructiva que solo requiere conocer el identificador, no se envía cuerpo en la petición HTTP.
 
-- Endpoint: `DELETE /api/v1/discipline/:id`
+- Endpoint: `DELETE /api/v1/disciplines/:id`
 - Request Body: `None`
 - Response: `204 No Content` en caso de éxito.
 
