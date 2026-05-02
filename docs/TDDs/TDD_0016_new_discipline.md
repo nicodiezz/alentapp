@@ -43,7 +43,7 @@ Se definirá la entidad `Discipline` con las siguientes propiedades y restriccio
 
 - Definiremos los tipos en el paquete compartido para asegurar sincronización:
 
-- Endpoint: `POST /api/v1/discipline`
+- Endpoint: `POST /api/v1/disciplines`
 - Request Body (CreateDisciplineRequest):
 
 ```ts
