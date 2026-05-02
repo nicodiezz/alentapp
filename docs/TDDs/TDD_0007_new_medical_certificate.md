@@ -44,7 +44,7 @@ Se definirá la entidad `MedicalCertificate` con las siguientes propiedades y re
 
 Definiremos los tipos en el paquete compartido para asegurar sincronización:
 
-- Endpoint: `POST /api/v1/medical-certificate`
+- Endpoint: `POST /api/v1/medical-certificates`
 - Request Body (CreateMedicalCertificateRequest):
 
 ```ts

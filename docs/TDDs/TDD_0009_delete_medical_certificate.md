@@ -32,7 +32,7 @@ Permitir a los administrativos dar de baja permanentemente a un certificado medi
 
 Al tratarse de una operación destructiva que solo requiere conocer el identificador, no se envía cuerpo en la petición HTTP.
 
-- Endpoint: `DELETE /api/v1/medical-certificate/:id`
+- Endpoint: `DELETE /api/v1/medical-certificates/:id`
 - Request Body: `None`
 - Response: `204 No Content` en caso de éxito.
 
