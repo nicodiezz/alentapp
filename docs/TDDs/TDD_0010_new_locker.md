@@ -21,7 +21,6 @@ Permitir el registro de nuevos casilleros en el sistema de forma digital, evitan
 ### Criterios de Aceptación
 
 - El sistema debe validar que el número de casillero `number` sea único.
-- El sistema debe permitir registrar la ubicación del casillero.
 - Al finalizar, el sistema debe mostrar un mensaje de éxito y limpiar el formulario.
 - El casillero debe quedar con estado `"Available"` por defecto.
 
