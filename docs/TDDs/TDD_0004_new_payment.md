@@ -1,8 +1,9 @@
 ---
 id: 0004
-autor: [Ramiro Gil]
-fecha: [2026-05-01]
-titulo: [Registro de Nuevo Pago]
+estado: Propuesto
+autor: Ramiro Gil
+fecha: 2026-05-01
+titulo: Registro de Nuevo Pago
 ---
 
 # TDD-0004: Registro de Nuevo Pago
