@@ -43,7 +43,7 @@ Se definirá la entidad `EquipmentLoan` con las siguientes propiedades y restric
 
 Definiremos los tipos en el paquete compartido para asegurar sincronización:
 
-- Endpoint: `POST /api/v1/equipment-loan`
+- Endpoint: `POST /api/v1/equipment-loans`
 - Request Body (CreateEquipmentLoanRequest):
 
 ```ts
