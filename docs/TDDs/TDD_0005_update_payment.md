@@ -51,7 +51,7 @@ Se utilizará el paquete compartido para definir el cuerpo de la petición. Todo
     amount?: number,
     month?: number,
     year?: number,
-    status?: "Pending" | "Paid" | "Canceled",
+    status?: "Pending" | "Paid",
     due_date?: string,
     payment_date?: string | null,
 }
