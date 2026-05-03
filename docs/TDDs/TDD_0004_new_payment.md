@@ -1,4 +1,5 @@
 ---
+id: 0004
 autor: [Ramiro Gil]
 fecha: [2026-05-01]
 titulo: [Registro de Nuevo Pago]
