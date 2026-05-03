@@ -1,6 +1,6 @@
 ---
 id: 0006
-estado: Implementado
+estado: Propuesto
 autor: Ramiro Gil
 fecha: 2026-05-01
 titulo: Eliminación de Casilleros Existentes
