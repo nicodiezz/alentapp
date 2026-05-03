@@ -1,5 +1,5 @@
 ---
-id: 0006
+id: 0012
 estado: Implementado
 autor: Ramiro Gil
 fecha: 2026-05-01
