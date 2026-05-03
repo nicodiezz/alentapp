@@ -23,7 +23,6 @@ Permitir que un usuario administrador registre un préstamo de equipo deportivo 
 
 - El sistema debe validar que due_date sea mayor a la fecha del préstamo.
 - El sistema debe validar que el socio asociado con member_id exista y su categoría sea igual a "Senior" o "Lifetime".
-- El sistema debe validar que el estado del préstamo sea uno de los permitidos ('Loaned', 'Returned', 'Damaged') o Nulo.
 - Al finalizar, el sistema debe mostrar un mensaje de éxito y limpiar el formulario.
 - El préstamo debe quedar guardado con estado "Loaned" por defecto.
 
@@ -50,7 +49,6 @@ Definiremos los tipos en el paquete compartido para asegurar sincronización:
 ```ts
 {
     item_name: string;
-    status: 'Loaned' | 'Returned' | 'Damaged';
     loan_date: string;
     due_date: string;
     member_id: string;
