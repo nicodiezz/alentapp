@@ -6,7 +6,7 @@ fecha: 2026-05-01
 titulo: Cancelación de Pago Existente
 ---
 
-# TDD-0003: Cancelación de Pago Existente
+# TDD-0006: Cancelación de Pago Existente
 
 ## Contexto de Negocio (PRD)
 
