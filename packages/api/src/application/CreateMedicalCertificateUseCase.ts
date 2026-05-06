@@ -10,6 +10,10 @@ export class CreateMedicalCertificateUseCase {
 
 	async execute(data: CreateMedicalCertificateRequest): Promise<MedicalCertificateDTO> {
 
+		if (!data.issue_date || !data.expiry_date || !data.doctor_license || !data.member_id) {
+        	throw new Error('Todos los campos son requeridos');
+    	}
+		
 		//fecha de vencimiento debe ser > que la fecha de emision.
 		this.medicalCertificateValidator.validateDates(
 			data.issue_date,
