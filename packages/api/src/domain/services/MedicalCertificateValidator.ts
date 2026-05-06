@@ -8,7 +8,7 @@ export class MedicalCertificateValidator {
         const expiry = new Date(expiryDate);
 
         if (expiry < issue) {
-            throw new Error('La fecha de emision debe ser previa a la fecha de vencimiento');
+            throw new Error('La fecha de vencimiento no puede ser previa a la fecha de emision');
         }
     }
 
