@@ -31,3 +31,23 @@ export interface UpdateMemberRequest {
   category?: MemberCategory;
   status?: MemberStatus;
 }
+
+// ==========================================
+// MedicalCertificate
+// ==========================================
+
+export interface MedicalCertificateDTO {
+  id: string;
+  issue_date: string; // ISO Date String (YYYY-MM-DD)
+  expiry_date: string; // ISO Date String (YYYY-MM-DD)
+  doctor_license: string;
+  is_validated: boolean;
+  member_id: string;
+}
+
+export interface CreateMedicalCertificateRequest {
+  issue_date: string;
+  expiry_date: string;
+  doctor_license: string;
+  member_id: string;
+}
