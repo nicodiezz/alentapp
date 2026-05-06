@@ -5,20 +5,18 @@ autor: Ramiro Gil
 fecha: 2026-05-01
 titulo: Eliminación de Casilleros Existentes
 ---
-
-# TDD-0006: Eliminación de Casilleros Existentes
+# TDD-0012: Eliminación de Casilleros Existentes
 
 ## Contexto de Negocio (PRD)
 
 ### Objetivo
-Permitir a los coordinadores dar de baja permanentemente la información de un casillero existente, eliminando su registro de la base de datos.
 
+Permitir a los coordinadores dar de baja permanentemente la información de un casillero existente, eliminando su registro de la base de datos.
 
 ### User Persona
 
 - Nombre: Carina (Coordinadora de instalaciones).
 - Necesidad: Eliminar casilleros que ya no están en uso para mantener la información actualizada y evitar inconsistencias en el sistema.
-
 
 ### Criterios de Aceptación
 
@@ -46,11 +44,11 @@ Al tratarse de una operación destructiva que solo requiere conocer el identific
 
 ## Casos de Borde y Errores
 
-| Escenario                  | Resultado Esperado                            | Código HTTP actual        |
-| -------------------------- | --------------------------------------------- | ------------------------- |
-| Locker inexistente          | Mensaje: "El Locker no existe"               | 404 Not found          |
-| Error de conexión a DB     | Mensaje: error del motor de base de datos     | 400 Bad Request           |
-| Eliminación exitosa        | Respuesta vacía                               | 204 No Content            |
+| Escenario               | Resultado Esperado                        | Código HTTP actual |
+| ----------------------- | ----------------------------------------- | ------------------- |
+| Locker inexistente      | Mensaje: "El Locker no existe"            | 404 Not found       |
+| Error de conexión a DB | Mensaje: error del motor de base de datos | 400 Bad Request     |
+| Eliminación exitosa    | Respuesta vacía                          | 204 No Content      |
 
 ## Plan de Implementación
 
