@@ -35,8 +35,23 @@ model Member {
     created_at DateTime       @default(now())
     
     medicalCertificates MedicalCertificate[]
+    disciplines         Discipline[]
 
     @@map("members") // Para que en la DB la tabla se llame 'members' en minúscula
+}
+
+model Discipline {
+    id                  String   @id @default(uuid())
+    reason              String
+    issue_date          DateTime @db.Date
+    expiry_date         DateTime @db.Date
+    is_total_suspension Boolean
+    created_at          DateTime @default(now())
+
+    member_id           String
+    member              Member   @relation(fields: [member_id], references: [id])
+
+    @@map("disciplines")
 }
 
 model MedicalCertificate {
