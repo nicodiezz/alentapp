@@ -5,6 +5,7 @@ export interface MedicalCertificateRepository {
     findActiveByMemberId(memberId: string): Promise<MedicalCertificateDTO | null>;
 	invalidateById(id: string): Promise<void>;
     findById(id: string): Promise<MedicalCertificateDTO | null>;
+    findAll(): Promise<MedicalCertificateDTO[]>;
     update(id: string, data: UpdateMedicalCertificateRequest): Promise<MedicalCertificateDTO>;
     delete(id: string): Promise<void>;
 }
