@@ -54,6 +54,17 @@ model Discipline {
     @@map("disciplines")
 }
 
+model Sport {
+    id                           String   @id @default(uuid())
+    name                         String   @unique
+    description                  String
+    max_capacity                 Int
+    additional_price             Decimal
+    requires_medical_certificate Boolean
+
+    @@map("sports")
+}
+
 model MedicalCertificate {
     id             String     @id @default(uuid())
     issue_date     DateTime   @db.Date
