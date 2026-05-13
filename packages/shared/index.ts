@@ -51,3 +51,10 @@ export interface CreateMedicalCertificateRequest {
   doctor_license: string;
   member_id: string;
 }
+
+export interface UpdateMedicalCertificateRequest {
+  issue_date?: string;
+  expiry_date?: string;
+  doctor_license?: string;
+  is_validated?: boolean;
+}
