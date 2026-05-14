@@ -1,5 +1,6 @@
 import { Box, SimpleGrid, Heading, Text, VStack } from "@chakra-ui/react";
 import { LuUsers } from "react-icons/lu";
+import { LuFileBadge } from "react-icons/lu";
 import { SectionCard } from "../components/SectionCard";
 
 export function HomeView() {
@@ -29,6 +30,13 @@ export function HomeView() {
           description="Administra el padrón de socios, sus categorías, estados de cuenta y datos personales."
           to="/members"
           icon={LuUsers}
+        />
+
+        <SectionCard
+          title="Certificados Médicos"
+          description="Gestiona los certificados medicos de los socios para habilitar su actividad fisica en el club."
+          to="/medical-certificates"
+          icon={LuFileBadge}
         />
 
         {/* Future sections can be added here following the same pattern */}
