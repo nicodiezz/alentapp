@@ -10,6 +10,9 @@ import { MemberController } from './delivery/MemberController.js';
 import { PostgresMedicalCertificateRepository } from './infrastructure/PostgresMedicalCertificateRepository.js';
 import { MedicalCertificateValidator } from './domain/services/MedicalCertificateValidator.js';
 import { CreateMedicalCertificateUseCase } from './application/CreateMedicalCertificateUseCase.js';
+import { GetMedicalCertificatesUseCase } from './application/GetMedicalCertificateUseCase.js';
+import { UpdateMedicalCertificateUseCase } from './application/UpdateMedicalCertificateUseCase.js';
+import { DeleteMedicalCertificateUseCase } from './application/DeleteMedicalCertificateUseCase.js';
 import { MedicalCertificateController } from './delivery/MedicalCertificateController.js';
 
 export function buildApp() {
@@ -52,8 +55,15 @@ export function buildApp() {
     const medicalCertificateRepo = new PostgresMedicalCertificateRepository();
     const medicalCertificateValidator = new MedicalCertificateValidator(memberRepo);
     const createMedicalCertificateUseCase = new CreateMedicalCertificateUseCase(medicalCertificateRepo, medicalCertificateValidator);
+    const getMedicalCertificatesUseCase = new GetMedicalCertificatesUseCase(medicalCertificateRepo);
+    const updateMedicalCertificateUseCase = new UpdateMedicalCertificateUseCase(medicalCertificateRepo, medicalCertificateValidator);
+    const deleteMedicalCertificateUseCase = new DeleteMedicalCertificateUseCase(medicalCertificateRepo, medicalCertificateValidator);
+
     const medicalCertificateController = new MedicalCertificateController(
         createMedicalCertificateUseCase,
+        getMedicalCertificatesUseCase,
+        updateMedicalCertificateUseCase,
+        deleteMedicalCertificateUseCase,
     );
 
     //rutas member
@@ -64,6 +74,9 @@ export function buildApp() {
 
     //rutas medical certificate
     server.post('/api/v1/medical-certificates', medicalCertificateController.create.bind(medicalCertificateController));
+    server.get('/api/v1/medical-certificates', medicalCertificateController.getAll.bind(medicalCertificateController));
+    server.put('/api/v1/medical-certificates/:id', medicalCertificateController.update.bind(medicalCertificateController));
+    server.delete('/api/v1/medical-certificates/:id', medicalCertificateController.delete.bind(medicalCertificateController));
 
 
     server.get('/', async (req, rep) => {
