@@ -1,7 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/client/client.js';
 import { MedicalCertificateRepository } from '../domain/MedicalCertificateRepository.js';
-import { MedicalCertificateDTO, CreateMedicalCertificateRequest } from '@alentapp/shared';
+import { MedicalCertificateDTO, CreateMedicalCertificateRequest, UpdateMedicalCertificateRequest } from '@alentapp/shared';
 
 if (!process.env.DATABASE_URL) {
     throw new Error('DATABASE_URL environment variable is not set');
@@ -36,6 +36,36 @@ export class PostgresMedicalCertificateRepository implements MedicalCertificateR
         return this.mapToDTO(certificate);
     }
 
+    async update(id: string, data: UpdateMedicalCertificateRequest): Promise<MedicalCertificateDTO> {
+        const certificate = await prisma.medicalCertificate.update({
+            where: { id },
+            data: {
+                ...(data.issue_date && { issue_date: new Date(data.issue_date) }),
+                ...(data.expiry_date && { expiry_date: new Date(data.expiry_date) }),
+                ...(data.doctor_license && { doctor_license: data.doctor_license }),
+                ...(data.is_validated !== undefined && { is_validated: data.is_validated }),
+            },
+        });
+
+        return this.mapToDTO(certificate);
+    }
+
+    async findAll(): Promise<MedicalCertificateDTO[]> {
+        const certificates = await prisma.medicalCertificate.findMany({
+            orderBy: { issue_date: 'desc' }, //devuelve los mas recientes
+        });
+
+        return certificates.map(cert => this.mapToDTO(cert));
+    }
+
+    async findById(id: string): Promise<MedicalCertificateDTO | null> {
+        const certificate = await prisma.medicalCertificate.findUnique({
+            where: { id },
+        });
+
+        return certificate ? this.mapToDTO(certificate) : null;
+    }
+
     async findActiveByMemberId(memberId: string): Promise<MedicalCertificateDTO | null> {
         const certificate = await prisma.medicalCertificate.findFirst({
             where: {
@@ -58,6 +88,12 @@ export class PostgresMedicalCertificateRepository implements MedicalCertificateR
             },
         });
     }
+
+    async delete(id: string): Promise<void> {
+        await prisma.medicalCertificate.delete({
+            where: { id },
+        });
+    }  
 
     private mapToDTO(cert: DBMedicalCertificate): MedicalCertificateDTO {
         return {
