@@ -39,8 +39,8 @@ Se utilizará el paquete compartido para definir el cuerpo de la petición. Todo
 ```ts
 {
     reason?: string;
-    start_date?: string;
-    end_date?: string;
+    issue_date?: string;
+    expiry_date?: string;
     is_total_suspension?: boolean;
     member_id?: string;
 }
