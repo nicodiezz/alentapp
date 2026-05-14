@@ -5,7 +5,7 @@ autor: Dante Barbé
 fecha: 2026-05-02
 titulo: Actualización de Casilleros Existentes
 ---
-# TDD-0005: Actualización de Casilleros Existentes
+# TDD-0011: Actualización de Casilleros Existentes
 
 ## Contexto de Negocio (PRD)
 
@@ -52,12 +52,12 @@ Permitir a los coordinadores corregir o modificar la información de un casiller
 
 ## Casos de Borde y Errores
 
-| Escenario                      | Resultado Esperado                                  | Código HTTP              |
-| ------------------------------ | --------------------------------------------------- | ------------------------- |
-| Casillero inexistente          | Mensaje: "El casillero no existe"               | 404 Not Found           |
-| Número de casillero duplicado | Mensaje: "Ya existe un casillero con ese número"   | 409 Conflict              |
-| Modificar member_id a casillero con status Maintenance | Mensaje: "No se puede asignar un casillero en mantenimiento"   | 409 Conflict              |
-| Error de conexión a BD        | Mensaje: "Error interno, reintente más tarde"      | 500 Internal Server Error |
+| Escenario                                              | Resultado Esperado                                           | Código HTTP              |
+| ------------------------------------------------------ | ------------------------------------------------------------ | ------------------------- |
+| Casillero inexistente                                  | Mensaje: "El casillero no existe"                            | 404 Not Found             |
+| Número de casillero duplicado                         | Mensaje: "Ya existe un casillero con ese número"            | 409 Conflict              |
+| Modificar member_id a casillero con status Maintenance | Mensaje: "No se puede asignar un casillero en mantenimiento" | 409 Conflict              |
+| Error de conexión a BD                                | Mensaje: "Error interno, reintente más tarde"               | 500 Internal Server Error |
 
 ## Plan de Implementación
 

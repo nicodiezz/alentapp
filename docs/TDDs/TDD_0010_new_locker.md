@@ -5,7 +5,7 @@ autor: Franco Arce
 fecha: 2026-05-02
 titulo: Registro de Nuevos Casilleros
 ---
-# TDD-0004: Registro de Nuevos Casilleros
+# TDD-0010: Registro de Nuevos Casilleros
 
 ## Contexto de Negocio (PRD)
 
