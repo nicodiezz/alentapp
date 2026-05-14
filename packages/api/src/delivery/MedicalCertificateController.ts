@@ -33,7 +33,7 @@ export class MedicalCertificateController {
             if (error.message.includes('Todos los campos son requeridos')) {
                 return reply.status(400).send({ error: error.message });
             }
-            if (error.message.includes('La fecha de emision debe ser previa a la fecha de vencimiento')) {
+            if (error.message.includes('La fecha de vencimiento no puede ser previa a la fecha de emision')) {
                 return reply.status(400).send({ error: error.message });
             }
             if (error.message.includes('El socio indicado no existe')) {
