@@ -6,11 +6,14 @@ import { MemberValidator } from './domain/services/MemberValidator.js';
 import { PaymentValidator } from './domain/services/PaymentValidator.js';
 import { CreateMemberUseCase } from './application/NewMemberUseCase.js';
 import { CreatePaymentUseCase } from './application/NewPaymentUseCase.js';
+import { GetPaymentsUseCase } from './application/GetPaymentsUseCase.js';
 import { GetMembersUseCase } from './application/GetMembersUseCase.js';
 import { UpdateMemberUseCase } from './application/UpdateMemberUseCase.js';
 import { DeleteMemberUseCase } from './application/DeleteMemberUseCase.js';
 import { MemberController } from './delivery/MemberController.js';
 import { PaymentController } from './delivery/PaymentController.js';
+
+
 
 export function buildApp() {
     const server = Fastify({
@@ -37,6 +40,7 @@ export function buildApp() {
     const paymentRepo = new PostgresPaymentRepository();
     const paymentValidator = new PaymentValidator();
     const createPaymentUseCase = new CreatePaymentUseCase(paymentRepo, paymentValidator, memberRepo);
+    const getPaymentsUseCase = new GetPaymentsUseCase(paymentRepo);
     const createMemberUseCase = new CreateMemberUseCase(memberRepo, memberValidator);
     const getMembersUseCase = new GetMembersUseCase(memberRepo);
     const updateMemberUseCase = new UpdateMemberUseCase(memberRepo, memberValidator);
@@ -51,6 +55,7 @@ export function buildApp() {
 
     const paymentController = new PaymentController(
         createPaymentUseCase,
+        getPaymentsUseCase
     );
 
     server.get('/api/v1/socios', memberController.getAll.bind(memberController));
@@ -59,7 +64,8 @@ export function buildApp() {
     server.delete('/api/v1/socios/:id', memberController.delete.bind(memberController));
 
     server.post('/api/v1/payments', paymentController.create.bind(paymentController));
-
+    server.get('/api/v1/payments', paymentController.findAll.bind(paymentController));
+    
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
     });

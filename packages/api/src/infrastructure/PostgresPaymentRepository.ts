@@ -40,6 +40,10 @@ export class PostgresPaymentRepository implements PaymentRepository {
         return this.mapToDTO(payment);
     }
 
+    async findAll(): Promise<PaymentDTO[]> {
+        const payments = await prisma.payment.findMany();
+        return payments.map(this.mapToDTO);
+    }
 
     private mapToDTO(payment: DBPayment): PaymentDTO {
         return {
