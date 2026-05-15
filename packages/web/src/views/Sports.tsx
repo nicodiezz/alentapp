@@ -83,7 +83,6 @@ export function SportsView() {
     try {
       await sportsService.create(formData);
       setIsDialogOpen(false);
-      setFormData(initialFormData);
       fetchSports();
     } catch (err: any) {
       alert(err.message || "Error al guardar el deporte");
