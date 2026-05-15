@@ -1,14 +1,15 @@
 import { MedicalCertificateRepository } from '../domain/MedicalCertificateRepository.js';
-import { MedicalCertificateValidator } from '../domain/services/MedicalCertificateValidator.js';
 
 export class DeleteMedicalCertificateUseCase {
     constructor(
-        private readonly medicalCertificateRepo: MedicalCertificateRepository,
-        private readonly medicalCertificateValidator: MedicalCertificateValidator
+        private readonly medicalCertificateRepo: MedicalCertificateRepository
     ) {}
 
     async execute(id: string): Promise<void> {
-        await this.medicalCertificateValidator.validateCertificateExists(id, this.medicalCertificateRepo);
+        const existingCertificate = await this.medicalCertificateRepo.findById(id);
+	    if (!existingCertificate) {
+		    throw new Error('El certificado no existe');
+	    }
         await this.medicalCertificateRepo.delete(id);
     }
 }

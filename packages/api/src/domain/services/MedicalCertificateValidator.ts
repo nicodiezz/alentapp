@@ -1,5 +1,4 @@
 import { MemberRepository } from '../MemberRepository.js';
-import { MedicalCertificateRepository } from '../MedicalCertificateRepository.js';
 
 export class MedicalCertificateValidator {
     constructor(private readonly memberRepo: MemberRepository) {} //se agrega como parametro al constructor ya q necesita usar funciones de OTRAS entidades (member) en validateMemberExists
@@ -18,14 +17,6 @@ export class MedicalCertificateValidator {
 
         if (!member) {
             throw new Error('El socio indicado no existe');
-        }
-    }
-
-    async validateCertificateExists(id: string, medicalCertificateRepo: MedicalCertificateRepository): Promise<void> {
-        const certificate = await medicalCertificateRepo.findById(id);
-
-        if (!certificate) {
-            throw new Error('El certificado no existe');
         }
     }
 
