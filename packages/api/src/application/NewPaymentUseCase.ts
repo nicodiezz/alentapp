@@ -30,7 +30,7 @@ export class CreatePaymentUseCase {
             amount: data.amount,
             month: data.month,
             year: data.year,
-            payment_date: data.payment_date ?? "",
+            payment_date: data.payment_date,
             status: data.status,
             due_date: data.due_date,
         });

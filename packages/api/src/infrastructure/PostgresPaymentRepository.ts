@@ -31,14 +31,15 @@ export class PostgresPaymentRepository implements PaymentRepository {
                 amount: data.amount,
                 month: data.month,
                 year: data.year,
-                payment_date: data.payment_date? new Date(data.payment_date): null,
+                payment_date: data.payment_date ? new Date(data.payment_date) : null,
                 status: data.status,
-                due_date: data.due_date,
+                due_date: new Date(data.due_date),
             },
         });
 
         return this.mapToDTO(payment);
     }
+
 
     private mapToDTO(payment: DBPayment): PaymentDTO {
         return {
@@ -47,9 +48,9 @@ export class PostgresPaymentRepository implements PaymentRepository {
             amount: payment.amount,
             month: payment.month,
             year: payment.year,
-            payment_date: payment.payment_date?.toISOString() ?? "",
+            payment_date: payment.payment_date?.toISOString().split('T')[0],
             status: payment.status,
-            due_date: payment.due_date.toISOString(),
+            due_date: payment.due_date.toISOString().split('T')[0],
             created_at: payment.created_at.toISOString(),
         };
     }
