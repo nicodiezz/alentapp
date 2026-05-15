@@ -15,7 +15,8 @@ import {
 import { LuPlus, LuPencil, LuTrash2, LuRefreshCw } from "react-icons/lu";
 import { useEffect, useState } from "react";
 import { medicalCertificatesService } from "../services/medicalCertificates";
-import type { MedicalCertificateDTO, CreateMedicalCertificateRequest, UpdateMedicalCertificateRequest } from "@alentapp/shared";
+import { membersService } from "../services/members";
+import type { MedicalCertificateDTO, CreateMedicalCertificateRequest, UpdateMedicalCertificateRequest, MemberDTO } from "@alentapp/shared";
 import {
     DialogRoot,
     DialogContent,
@@ -27,9 +28,18 @@ import {
     DialogCloseTrigger,
 } from "../components/ui/dialog";
 import { Field } from "../components/ui/field";
+import {
+    SelectRoot,
+    SelectTrigger,
+    SelectValueText,
+    SelectContent,
+    SelectItem,
+    createListCollection,
+} from "../components/ui/select";
 
 export function MedicalCertificatesView() {
     const [certificates, setCertificates] = useState<MedicalCertificateDTO[]>([]);
+    const [members, setMembers] = useState<MemberDTO[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -46,14 +56,22 @@ export function MedicalCertificatesView() {
         member_id: "",
     });
 
-    const fetchCertificates = async () => {
+    const membersCollection = createListCollection({
+        items: members.map((m) => ({ label: m.name, value: m.id })),
+    });
+
+    const fetchData = async () => {
         setIsLoading(true);
         setError(null);
         try {
-            const data = await medicalCertificatesService.getAll();
-            setCertificates(data);
+            const [certificatesData, membersData] = await Promise.all([
+                medicalCertificatesService.getAll(),
+                membersService.getAll(),
+            ]);
+            setCertificates(certificatesData);
+            setMembers(membersData);
         } catch (err: any) {
-            setError(err.message || "Error al cargar los certificados medicos");
+            setError(err.message || "Error al cargar los datos");
         } finally {
             setIsLoading(false);
         }
@@ -86,7 +104,7 @@ export function MedicalCertificatesView() {
                 await medicalCertificatesService.create(formData as CreateMedicalCertificateRequest);
             }
             setIsDialogOpen(false);
-            fetchCertificates();
+            fetchData();
         } catch (err: any) {
             alert(err.message || "Error al guardar el certificado medico");
         } finally {
@@ -98,15 +116,19 @@ export function MedicalCertificatesView() {
         if (window.confirm("¿Estás seguro de que deseas eliminar este certificado médico? Esta acción no se puede deshacer.")) {
             try {
                 await medicalCertificatesService.delete(id);
-                fetchCertificates();
+                fetchData();
             } catch (err: any) {
                 alert(err.message || "Error al eliminar el certificado medico");
             }
         }
     };
 
+    const getMemberName = (memberId: string) => {
+        return members.find((m) => m.id === memberId)?.name ?? memberId;
+    };
+
     useEffect(() => {
-        fetchCertificates();
+        fetchData();
     }, []);
 
     return (
@@ -120,7 +142,7 @@ export function MedicalCertificatesView() {
                         </Text>
                     </Stack>
                     <HStack gap="3">
-                        <Button variant="outline" onClick={fetchCertificates} disabled={isLoading}>
+                        <Button variant="outline" onClick={fetchData} disabled={isLoading}>
                             <LuRefreshCw /> Actualizar
                         </Button>
                         <Button colorPalette="blue" size="md" onClick={openCreateModal}>
@@ -137,13 +159,23 @@ export function MedicalCertificatesView() {
                         </DialogHeader>
                         <DialogBody>
                             <Stack gap="4">
-                                <Field label="ID del Socio" required>
-                                    <Input
-                                        placeholder="UUID del socio"
-                                        value={formData.member_id}
-                                        onChange={(e) => setFormData({ ...formData, member_id: e.target.value })}
-                                        required
-                                    />
+                                <Field label="Miembro" required>
+                                    <SelectRoot
+                                        collection={membersCollection}
+                                        value={formData.member_id ? [formData.member_id] : []}
+                                        onValueChange={(e) => setFormData({ ...formData, member_id: e.value[0] })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValueText placeholder="Seleccione un miembro" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {membersCollection.items.map((item) => (
+                                                <SelectItem item={item} key={item.value}>
+                                                    {item.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </SelectRoot>
                                 </Field>
                                 <Field label="Fecha de Emision" required>
                                     <Input
@@ -219,14 +251,14 @@ export function MedicalCertificatesView() {
                         <Center h="300px">
                             <Stack align="center" gap="4">
                                 <Text color="fg.muted">No se encontraron certificados medicos.</Text>
-                                <Button variant="ghost" onClick={fetchCertificates}>Reintentar</Button>
+                                <Button variant="ghost" onClick={fetchData}>Reintentar</Button>
                             </Stack>
                         </Center>
                     ) : (
                         <Table.Root size="md" variant="line" interactive>
                             <Table.Header>
                                 <Table.Row bg="bg.muted/50">
-                                    <Table.ColumnHeader py="4">ID Socio</Table.ColumnHeader>
+                                    <Table.ColumnHeader py="4">Miembro</Table.ColumnHeader>
                                     <Table.ColumnHeader py="4">Fecha de Emision</Table.ColumnHeader>
                                     <Table.ColumnHeader py="4">Fecha de Vencimiento</Table.ColumnHeader>
                                     <Table.ColumnHeader py="4">Matricula Medico</Table.ColumnHeader>
@@ -237,7 +269,7 @@ export function MedicalCertificatesView() {
                             <Table.Body>
                                 {certificates.map((cert) => (
                                     <Table.Row key={cert.id} _hover={{ bg: "bg.muted/30" }}>
-                                        <Table.Cell color="fg.muted">{cert.member_id}</Table.Cell>
+                                        <Table.Cell fontWeight="semibold" color="fg.emphasized">{getMemberName(cert.member_id)}</Table.Cell>
                                         <Table.Cell color="fg.muted">{cert.issue_date}</Table.Cell>
                                         <Table.Cell color="fg.muted">{cert.expiry_date}</Table.Cell>
                                         <Table.Cell color="fg.muted">{cert.doctor_license}</Table.Cell>
