@@ -13,6 +13,12 @@ import { CreateSportUseCase } from './application/NewSportUseCase.js';
 import { GetSportsUseCase } from './application/GetSportsUseCase.js';
 import { SportController } from './delivery/SportController.js';
 
+import { PostgresDisciplineRepository } from './infrastructure/PostgresDisciplineRepository.js';
+import { DisciplineValidator } from './domain/services/DisciplineValidator.js';
+import { CreateDisciplineUseCase } from './application/NewDisciplineUseCase.js';
+import { GetDisciplinesUseCase } from './application/GetDisciplinesUseCase.js';
+import { DisciplineController } from './delivery/DisciplineController.js';
+
 export function buildApp() {
     const server = Fastify({
         logger: {
@@ -35,6 +41,10 @@ export function buildApp() {
 
     const memberRepo = new PostgresMemberRepository();
     const memberValidator = new MemberValidator(memberRepo);
+    const disciplineRepo = new PostgresDisciplineRepository();
+    const disciplineValidator = new DisciplineValidator(memberRepo);
+
+
     const sportRepo = new PostgresSportRepository();
     const sportValidator = new SportValidator(sportRepo);
     
@@ -45,13 +55,25 @@ export function buildApp() {
     const createSportUseCase = new CreateSportUseCase(sportRepo, sportValidator);
     const getSportsUseCase = new GetSportsUseCase(sportRepo);
 
+    const createDisciplineUseCase = new CreateDisciplineUseCase(disciplineRepo, disciplineValidator);
+    const getDisciplinesUseCase = new GetDisciplinesUseCase(disciplineRepo);
+
     const memberController = new MemberController(
         createMemberUseCase, 
         getMembersUseCase,
         updateMemberUseCase,
         deleteMemberUseCase
     );
-    const sportController = new SportController(createSportUseCase, getSportsUseCase);
+  
+    const sportController = new SportController(
+        createSportUseCase, 
+        getSportsUseCase
+    );
+
+    const disciplineController = new DisciplineController(
+        createDisciplineUseCase, 
+        getDisciplinesUseCase,
+    );
 
     server.get('/api/v1/socios', memberController.getAll.bind(memberController));
     server.post('/api/v1/socios', memberController.create.bind(memberController));
@@ -59,7 +81,9 @@ export function buildApp() {
     server.delete('/api/v1/socios/:id', memberController.delete.bind(memberController));
     server.get('/api/v1/sports', sportController.getAll.bind(sportController));
     server.post('/api/v1/sports', sportController.create.bind(sportController));
-
+    server.get('/api/v1/disciplines', disciplineController.getAll.bind(disciplineController));
+    server.post('/api/v1/disciplines', disciplineController.create.bind(disciplineController));
+    
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
     });

@@ -32,6 +32,31 @@ export interface UpdateMemberRequest {
   status?: MemberStatus;
 }
 
+export interface DisciplineDTO {
+  id: string; // UUID
+  reason: string;
+  issue_date: string; // ISO Date String (YYYY-MM-DD)
+  expiry_date: string; // ISO Date String (YYYY-MM-DD)
+  is_total_suspension: boolean;
+  member_id: string;
+}
+
+export interface CreateDisciplineRequest {
+  reason: string;
+  issue_date: string; // ISO Date String (YYYY-MM-DD)
+  expiry_date: string; // ISO Date String (YYYY-MM-DD)
+  is_total_suspension: boolean;
+  member_id: string;
+}
+
+export interface UpdateDisciplineRequest {
+  reason?: string;
+  issue_date?: string; // ISO Date String (YYYY-MM-DD)
+  expiry_date?: string; // ISO Date String (YYYY-MM-DD)
+  is_total_suspension?: boolean;
+  member_id?: string;
+}
+
 // ==========================================
 // Sport
 // ==========================================
