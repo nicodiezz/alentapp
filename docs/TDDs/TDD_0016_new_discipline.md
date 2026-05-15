@@ -33,8 +33,8 @@ Se definirá la entidad `Discipline` con las siguientes propiedades y restriccio
 
 - `id`: Identificador único universal (UUID).
 - `reason`: Cadena de texto.
-- `start_date`: Fecha de inicio de la suspensión.
-- `end_date`: Fecha de fin de la suspensión, debe ser posterior a la fecha de inicio.
+- `issue_date`: Fecha de inicio de la suspensión.
+- `expiry_date`: Fecha de fin de la suspensión, debe ser posterior a la fecha de inicio.
 - `is_total_suspension`: Booleano.
 - `member_id`: Identificador del socio al que pertenece la suspensión (FK a Member).
 
@@ -49,8 +49,8 @@ Se definirá la entidad `Discipline` con las siguientes propiedades y restriccio
 ```ts
 {
     reason: string;
-    start_date: string;
-    end_date: string;
+    issue_date: string;
+    expiry_date: string;
     is_total_suspension: boolean;
     member_id: string;
 }
