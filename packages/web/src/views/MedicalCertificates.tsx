@@ -90,6 +90,7 @@ export function MedicalCertificatesView() {
             expiry_date: cert.expiry_date,
             doctor_license: cert.doctor_license,
             member_id: cert.member_id,
+            is_validated: cert.is_validated,
         });
         setIsDialogOpen(true);
     };
@@ -159,23 +160,27 @@ export function MedicalCertificatesView() {
                         </DialogHeader>
                         <DialogBody>
                             <Stack gap="4">
-                                <Field label="Miembro" required>
-                                    <SelectRoot
-                                        collection={membersCollection}
-                                        value={formData.member_id ? [formData.member_id] : []}
-                                        onValueChange={(e) => setFormData({ ...formData, member_id: e.value[0] })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValueText placeholder="Seleccione un miembro" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {membersCollection.items.map((item) => (
-                                                <SelectItem item={item} key={item.value}>
-                                                    {item.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </SelectRoot>
+                                <Field label="Miembro" required={!editingCertificateId}>
+                                    {editingCertificateId ? (
+                                        <Text fontWeight="medium">{getMemberName(formData.member_id)}</Text>
+                                    ) : (
+                                        <SelectRoot
+                                            collection={membersCollection}
+                                            value={formData.member_id ? [formData.member_id] : []}
+                                            onValueChange={(e) => setFormData({ ...formData, member_id: e.value[0] })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValueText placeholder="Seleccione un miembro" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {membersCollection.items.map((item) => (
+                                                    <SelectItem item={item} key={item.value}>
+                                                        {item.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </SelectRoot>
+                                    )}
                                 </Field>
                                 <Field label="Fecha de Emision" required>
                                     <Input
