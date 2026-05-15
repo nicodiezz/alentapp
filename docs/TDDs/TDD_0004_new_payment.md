@@ -22,8 +22,8 @@ Digitalizar el registro de pagos de socios, permitiendo que un administrativo re
 *   El sistema debe validar que `amount` sea numérico y mayor a 0 .
 *   El sistema debe validar que `month` sea numérico y esté en el rango 1 a 12.
 *   El sistema debe validar que `year` esté sea numérico y mayor igual al año actual.
-*   El sistema debe validar que `due_date` esté en formato date.
-*   El sistema debe validar que `payment_date` esté en formato date, sea nullable y obligatoria si status="Paid".
+*   El sistema debe validar que `due_date` esté en formato date y sea mayor o igual al día actual.
+*   El sistema debe validar que `payment_date` esté en formato date, sea nullable y obligatoria si status="Paid" y mayor o igual al día actual.
 *   El sistema debe validar que `status` sea "Pending" o "Paid".
 *   Al finalizar, el sistema debe mostrar un mensaje de éxito y limpiar el formulario.
 
@@ -75,10 +75,14 @@ Definiremos los tipos en el paquete compartido para asegurar sincronización:
 | `member_id` no encontrado   | Mensaje: "No existe un miembro con ese ID"      | 404 Not found              |
 | `amount` con Formato inválido| Monto inválido              | 400 Bad Request           |
 | `month` con formato inválido| Mes inválido              | 400 Bad Request           |
+| `month` fuera de rango      | El mes debe estar entre 1 y 12              | 400 Bad Request           |
 | `year` con formato inválido| Año inválido              | 400 Bad Request           |
+| `year` menor al año actual| El año debe ser mayor o igual al año actual             | 400 Bad Request           |
 | `status` con formato inválido | El status debe ser "Pendiente" o "Pagado"              | 400 Bad Request           |
 | `due_date` con formato inválido | Fecha de vencimiento inválido             | 400 Bad Request           |
 | `payment_date` con formato inválido | Fecha de pago inválido             | 400 Bad Request           |
+| `due_date` menor al día actual | La fecha de vencimiento debe ser mayor o igual al día actual | 400 Bad Request           |
+| `payment_date` menor al día actual | La fecha de pago debe ser mayor o igual al día actual | 400 Bad Request           |
 | Error de conexión a DB     | Mensaje: "Error interno, reintente más tarde" | 500 Internal Server Error |
 
 ## Plan de Implementación
