@@ -40,7 +40,8 @@ model Member {
     status     MemberStatus   @default(Activo)
     created_at DateTime       @default(now())
     
-    medicalCertificates MedicalCertificate[]
+    equipment_loans     EquipmentLoan[]
+    medical_certificates MedicalCertificate[]
     disciplines         Discipline[]
     payments            Payment[]
     @@map("members") // Para que en la DB la tabla se llame 'members' en minúscula
@@ -98,4 +99,22 @@ model MedicalCertificate {
     member         Member     @relation(fields: [member_id], references: [id])
 
     @@map("medical_certificates")
+}
+
+enum EquipmentLoanStatus {
+    Loaned
+    Returned
+    Damaged
+}
+
+model EquipmentLoan {
+    id             String     @id @default(uuid())
+    item_name      String
+    status         EquipmentLoanStatus
+    loan_date     DateTime   @db.Date
+    due_date    DateTime   @db.Date
+    member_id      String
+    member         Member     @relation(fields: [member_id], references: [id])
+
+    @@map("equipment_loans")
 }
