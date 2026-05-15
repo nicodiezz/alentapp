@@ -31,6 +31,13 @@ export class UpdateMedicalCertificateUseCase {
             this.medicalCertificateValidator.validateDates(issueDate, expiryDate); //delega validacion
         }
 
+        if (data.is_validated === true) {
+            const activeCertificate = await this.medicalCertificateRepo.findActiveByMemberId(existingCertificate.member_id);
+            if (activeCertificate && activeCertificate.id !== id) {
+                await this.medicalCertificateRepo.invalidateById(activeCertificate.id);
+            }
+        }
+
         return this.medicalCertificateRepo.update(id, data);
     }
 }
