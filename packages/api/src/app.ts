@@ -7,6 +7,16 @@ import { GetMembersUseCase } from './application/GetMembersUseCase.js';
 import { UpdateMemberUseCase } from './application/UpdateMemberUseCase.js';
 import { DeleteMemberUseCase } from './application/DeleteMemberUseCase.js';
 import { MemberController } from './delivery/MemberController.js';
+import { PostgresSportRepository } from './infrastructure/PostgresSportRepository.js';
+import { SportValidator } from './domain/services/SportValidator.js';
+import { CreateSportUseCase } from './application/NewSportUseCase.js';
+import { GetSportsUseCase } from './application/GetSportsUseCase.js';
+import { SportController } from './delivery/SportController.js';
+import { PostgresDisciplineRepository } from './infrastructure/PostgresDisciplineRepository.js';
+import { DisciplineValidator } from './domain/services/DisciplineValidator.js';
+import { CreateDisciplineUseCase } from './application/NewDisciplineUseCase.js';
+import { GetDisciplinesUseCase } from './application/GetDisciplinesUseCase.js';
+import { DisciplineController } from './delivery/DisciplineController.js';
 import { PostgresMedicalCertificateRepository } from './infrastructure/PostgresMedicalCertificateRepository.js';
 import { MedicalCertificateValidator } from './domain/services/MedicalCertificateValidator.js';
 import { CreateMedicalCertificateUseCase } from './application/CreateMedicalCertificateUseCase.js';
@@ -38,17 +48,38 @@ export function buildApp() {
     //member
     const memberRepo = new PostgresMemberRepository();
     const memberValidator = new MemberValidator(memberRepo);
+    const disciplineRepo = new PostgresDisciplineRepository();
+    const disciplineValidator = new DisciplineValidator(memberRepo);
+
+
+    const sportRepo = new PostgresSportRepository();
+    const sportValidator = new SportValidator(sportRepo);
     
     const createMemberUseCase = new CreateMemberUseCase(memberRepo, memberValidator);
     const getMembersUseCase = new GetMembersUseCase(memberRepo);
     const updateMemberUseCase = new UpdateMemberUseCase(memberRepo, memberValidator);
     const deleteMemberUseCase = new DeleteMemberUseCase(memberRepo);
+    const createSportUseCase = new CreateSportUseCase(sportRepo, sportValidator);
+    const getSportsUseCase = new GetSportsUseCase(sportRepo);
+
+    const createDisciplineUseCase = new CreateDisciplineUseCase(disciplineRepo, disciplineValidator);
+    const getDisciplinesUseCase = new GetDisciplinesUseCase(disciplineRepo);
 
     const memberController = new MemberController(
         createMemberUseCase, 
         getMembersUseCase,
         updateMemberUseCase,
         deleteMemberUseCase
+    );
+  
+    const sportController = new SportController(
+        createSportUseCase, 
+        getSportsUseCase
+    );
+
+    const disciplineController = new DisciplineController(
+        createDisciplineUseCase, 
+        getDisciplinesUseCase,
     );
 
     //medical certificate
@@ -72,13 +103,17 @@ export function buildApp() {
     server.put('/api/v1/socios/:id', memberController.update.bind(memberController));
     server.delete('/api/v1/socios/:id', memberController.delete.bind(memberController));
 
-    //rutas medical certificate
+    server.get('/api/v1/sports', sportController.getAll.bind(sportController));
+    server.post('/api/v1/sports', sportController.create.bind(sportController));
+    server.get('/api/v1/disciplines', disciplineController.getAll.bind(disciplineController));
+    server.post('/api/v1/disciplines', disciplineController.create.bind(disciplineController));
+  
+  //rutas medical certificate
     server.post('/api/v1/medical-certificates', medicalCertificateController.create.bind(medicalCertificateController));
     server.get('/api/v1/medical-certificates', medicalCertificateController.getAll.bind(medicalCertificateController));
     server.put('/api/v1/medical-certificates/:id', medicalCertificateController.update.bind(medicalCertificateController));
     server.delete('/api/v1/medical-certificates/:id', medicalCertificateController.delete.bind(medicalCertificateController));
-
-
+    
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
     });
