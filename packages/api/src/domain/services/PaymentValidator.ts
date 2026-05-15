@@ -35,8 +35,10 @@ export class PaymentValidator {
             throw new Error('Fecha de vencimiento inválida');
         }
         const dueDate = new Date(due_date);
-        if (isNaN(dueDate.getTime())) {
-            throw new Error('La fecha de vencimiento debe ser mayor o igual a la fecha actual');
+        if (!isNaN(dueDate.getTime())) {
+            if (dueDate < new Date()) {
+                throw new Error('La fecha de vencimiento debe ser mayor o igual a la fecha actual');
+            }
         }
     }
 
@@ -47,6 +49,11 @@ export class PaymentValidator {
         }
         if (status !== 'Paid') {
             throw new Error('El status debe ser "Pagado"');
+        }
+        if (status === 'Paid' && !isNaN(date.getTime())) {
+            if (date < new Date()) {
+                throw new Error('La fecha de pago debe ser mayor o igual a la fecha actual');
+            }
         }
     }
 
