@@ -4,7 +4,7 @@ import { MedicalCertificateDTO,	CreateMedicalCertificateRequest } from '@alentap
 
 export class CreateMedicalCertificateUseCase {
 	constructor(
-		private readonly medicalCertificateRepository: MedicalCertificateRepository,
+		private readonly medicalCertificateRepo: MedicalCertificateRepository,
 		private readonly medicalCertificateValidator: MedicalCertificateValidator
 	) {}
 
@@ -27,17 +27,17 @@ export class CreateMedicalCertificateUseCase {
 
 		//existe certificado activo para este miembro?
 		const activeCertificate =
-			await this.medicalCertificateRepository.findActiveByMemberId(
+			await this.medicalCertificateRepo.findActiveByMemberId(
 				data.member_id
 			);
 
 		if (activeCertificate) { //si SI existe: invalidarlo
-			await this.medicalCertificateRepository.invalidateById(
+			await this.medicalCertificateRepo.invalidateById(
 				activeCertificate.id
 			);
 		}
 
-		const newCertificate = await this.medicalCertificateRepository.create(data);
+		const newCertificate = await this.medicalCertificateRepo.create(data);
         
 		return newCertificate;
 	}
