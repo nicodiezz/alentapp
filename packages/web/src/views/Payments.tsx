@@ -64,8 +64,7 @@ export function PaymentsView() {
     const statusCollection = createListCollection({
         items: [
             { label: 'Pendiente', value: 'Pending' },
-            { label: 'Pagado', value: 'Paid' },
-            { label: 'Cancelado', value: 'Canceled' },
+            { label: 'Pagado', value: 'Paid' }
         ],
     });
 
@@ -140,8 +139,8 @@ export function PaymentsView() {
                 due_date: formData.due_date as string,
             };
             await paymentsService.create(payload as CreatePaymentRequest);
+            alert('Pago registrado correctamente');
             setIsDialogOpen(false);
-
             fetchPayments();
         } catch (err: any) {
             alert(err.message || 'Error al guardar el pago');
