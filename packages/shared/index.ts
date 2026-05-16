@@ -62,3 +62,82 @@ export interface CreatePaymentRequest {
 }
 
 
+// MedicalCertificate
+// ==========================================
+
+export interface MedicalCertificateDTO {
+  id: string;
+  issue_date: string; // ISO Date String (YYYY-MM-DD)
+  expiry_date: string; // ISO Date String (YYYY-MM-DD)
+  doctor_license: string;
+  is_validated: boolean;
+  member_id: string;
+}
+
+export interface CreateMedicalCertificateRequest {
+  issue_date: string;
+  expiry_date: string;
+  doctor_license: string;
+  member_id: string;
+}
+
+export interface UpdateMedicalCertificateRequest {
+  issue_date?: string;
+  expiry_date?: string;
+  doctor_license?: string;
+  is_validated?: boolean;
+}
+
+// ==========================================
+// Discipline
+// ==========================================
+
+export interface DisciplineDTO {
+  id: string; // UUID
+  reason: string;
+  issue_date: string; // ISO Date String (YYYY-MM-DD)
+  expiry_date: string; // ISO Date String (YYYY-MM-DD)
+  is_total_suspension: boolean;
+  member_id: string;
+}
+
+export interface CreateDisciplineRequest {
+  reason: string;
+  issue_date: string; // ISO Date String (YYYY-MM-DD)
+  expiry_date: string; // ISO Date String (YYYY-MM-DD)
+  is_total_suspension: boolean;
+  member_id: string;
+}
+
+export interface UpdateDisciplineRequest {
+  reason?: string;
+  issue_date?: string; // ISO Date String (YYYY-MM-DD)
+  expiry_date?: string; // ISO Date String (YYYY-MM-DD)
+  is_total_suspension?: boolean;
+  member_id?: string;
+}
+
+// ==========================================
+// Sport
+// ==========================================
+export interface SportDTO {
+  id: string; // UUID
+  name: string;
+  description: string;
+  max_capacity: number;
+  additional_price: number;
+  requires_medical_certificate: boolean;
+}
+
+export interface CreateSportRequest {
+  name: string;
+  description: string;
+  max_capacity: number;
+  additional_price: number;
+  requires_medical_certificate: boolean;
+}
+
+export interface UpdateSportRequest {
+  description?: string;
+  max_capacity?: number;
+}
