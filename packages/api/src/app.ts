@@ -50,7 +50,7 @@ export function buildApp() {
     const memberRepo = new PostgresMemberRepository();
     const memberValidator = new MemberValidator(memberRepo);
     const disciplineRepo = new PostgresDisciplineRepository();
-    const disciplineValidator = new DisciplineValidator(memberRepo);
+    const disciplineValidator = new DisciplineValidator();
 
 
     const sportRepo = new PostgresSportRepository();
@@ -63,9 +63,9 @@ export function buildApp() {
     const createSportUseCase = new CreateSportUseCase(sportRepo, sportValidator);
     const getSportsUseCase = new GetSportsUseCase(sportRepo);
 
-    const createDisciplineUseCase = new CreateDisciplineUseCase(disciplineRepo, disciplineValidator);
+    const createDisciplineUseCase = new CreateDisciplineUseCase(disciplineRepo, disciplineValidator, memberRepo);
     const getDisciplinesUseCase = new GetDisciplinesUseCase(disciplineRepo);
-    const updateDisciplinesUseCase = new UpdateDisciplineUseCase(disciplineRepo, disciplineValidator);
+    const updateDisciplinesUseCase = new UpdateDisciplineUseCase(disciplineRepo, disciplineValidator, memberRepo);
 
     const memberController = new MemberController(
         createMemberUseCase, 

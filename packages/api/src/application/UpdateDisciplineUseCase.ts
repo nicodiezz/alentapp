@@ -1,11 +1,13 @@
 import { DisciplineRepository } from '../domain/DisciplineRepository.js';
 import { DisciplineValidator } from '../domain/services/DisciplineValidator.js';
+import { MemberRepository } from '../domain/MemberRepository.js';
 import { DisciplineDTO, UpdateDisciplineRequest } from '@alentapp/shared';
 
 export class UpdateDisciplineUseCase {
     constructor(
         private readonly disciplineRepo: DisciplineRepository,
-        private readonly disciplineValidator: DisciplineValidator
+        private readonly disciplineValidator: DisciplineValidator,
+        private readonly memberRepo: MemberRepository,
     ) {}
 
     async execute(id: string, data: UpdateDisciplineRequest): Promise<DisciplineDTO> {
@@ -29,9 +31,11 @@ export class UpdateDisciplineUseCase {
             this.disciplineValidator.validateDates(finalStartDate, finalEndDate);
         }
 
-        // Validar existencia de un miembro con ese member_id si se envió y cambió
         if (data.member_id && data.member_id !== existingDiscipline.member_id) {
-            await this.disciplineValidator.validateMemberExists(data.member_id);
+            const member = await this.memberRepo.findById(data.member_id);
+            if (!member) {
+                throw new Error('El miembro indicado no existe');
+            }
         }
 
         return this.disciplineRepo.update(id, data);
