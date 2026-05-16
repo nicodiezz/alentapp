@@ -25,6 +25,7 @@ Permitir al administrativo modificar la informacion de un certificado medico exi
 - El sistema debe validar que, si se modifican las fechas,`expiry_date` continue siendo posterior a `issue_date`.
 - El sistema debe validar que el certificado a modificar exista.
 - Si la edición es correcta, debe retornar los nuevos datos del certificado actualizados.
+- Si se actualiza `is_validated` a true, el sistema debe invalidar cualquier otro certificado activo del mismo socio antes de aplicar la actualización.
 
 ## Diseño Técnico (RFC)
 
@@ -59,6 +60,7 @@ Se utilizará el paquete compartido para definir el cuerpo de la petición. Todo
 | Certificado inexistente          | Mensaje: "El certificado no existe"               | 400 Bad Request           |
 | `expiry_date` anterior a `issue_date` | Mensaje: "La fecha de vencimiento no puede ser previa a la fecha de emisión" | 400 Bad Request |
 | Fecha con formato inválido | Mensaje: "Formato de fecha inválido"| 400 Bad Request        |
+| Socio ya tiene certificado activo al validar uno nuevo | Invalida el anterior y actualiza el certificado exitosamente | 200 Ok |
 | Error de conexión a DB     | Mensaje: "Error interno, reintente más tarde" | 500 Internal Server Error |
 
 ## Plan de Implementación
