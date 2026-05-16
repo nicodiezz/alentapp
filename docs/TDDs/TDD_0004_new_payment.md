@@ -78,11 +78,12 @@ Definiremos los tipos en el paquete compartido para asegurar sincronización:
 | `month` fuera de rango      | El mes debe estar entre 1 y 12              | 400 Bad Request           |
 | `year` con formato inválido| Año inválido              | 400 Bad Request           |
 | `year` menor al año actual| El año debe ser mayor o igual al año actual             | 400 Bad Request           |
-| `status` con formato inválido | El status debe ser "Pendiente" o "Pagado"              | 400 Bad Request           |
+| `status` con formato inválido | El estado debe ser "Pendiente" o "Pagado"              | 400 Bad Request           |
 | `due_date` con formato inválido | Fecha de vencimiento inválido             | 400 Bad Request           |
 | `payment_date` con formato inválido | Fecha de pago inválido             | 400 Bad Request           |
 | `due_date` menor al día actual | La fecha de vencimiento debe ser mayor o igual al día actual | 400 Bad Request           |
 | `payment_date` menor al día actual | La fecha de pago debe ser mayor o igual al día actual | 400 Bad Request           |
+| `payment_date` si `status` es "Paid" | La fecha de pago es obligatoria si el estado es Pagado | 400 Bad Request           |
 | Error de conexión a DB     | Mensaje: "Error interno, reintente más tarde" | 500 Internal Server Error |
 
 ## Plan de Implementación
