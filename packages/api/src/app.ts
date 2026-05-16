@@ -17,6 +17,7 @@ import { PostgresDisciplineRepository } from './infrastructure/PostgresDisciplin
 import { DisciplineValidator } from './domain/services/DisciplineValidator.js';
 import { CreateDisciplineUseCase } from './application/NewDisciplineUseCase.js';
 import { GetDisciplinesUseCase } from './application/GetDisciplinesUseCase.js';
+import { UpdateDisciplineUseCase } from './application/UpdateDisciplineUseCase.js';
 import { DisciplineController } from './delivery/DisciplineController.js';
 
 export function buildApp() {
@@ -57,6 +58,7 @@ export function buildApp() {
 
     const createDisciplineUseCase = new CreateDisciplineUseCase(disciplineRepo, disciplineValidator);
     const getDisciplinesUseCase = new GetDisciplinesUseCase(disciplineRepo);
+    const updateDisciplinesUseCase = new UpdateDisciplineUseCase(disciplineRepo, disciplineValidator);
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -73,6 +75,7 @@ export function buildApp() {
     const disciplineController = new DisciplineController(
         createDisciplineUseCase, 
         getDisciplinesUseCase,
+        updateDisciplinesUseCase,
     );
 
     server.get('/api/v1/socios', memberController.getAll.bind(memberController));
@@ -83,6 +86,7 @@ export function buildApp() {
     server.post('/api/v1/sports', sportController.create.bind(sportController));
     server.get('/api/v1/disciplines', disciplineController.getAll.bind(disciplineController));
     server.post('/api/v1/disciplines', disciplineController.create.bind(disciplineController));
+    server.put('/api/v1/disciplines/:id', disciplineController.update.bind(disciplineController));
     
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
