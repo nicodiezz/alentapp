@@ -11,6 +11,7 @@ import { PostgresSportRepository } from './infrastructure/PostgresSportRepositor
 import { SportValidator } from './domain/services/SportValidator.js';
 import { CreateSportUseCase } from './application/NewSportUseCase.js';
 import { GetSportsUseCase } from './application/GetSportsUseCase.js';
+import { UpdateSportUseCase } from './application/UpdateSportUseCase.js';
 import { SportController } from './delivery/SportController.js';
 import { PostgresDisciplineRepository } from './infrastructure/PostgresDisciplineRepository.js';
 import { DisciplineValidator } from './domain/services/DisciplineValidator.js';
@@ -61,6 +62,7 @@ export function buildApp() {
     const deleteMemberUseCase = new DeleteMemberUseCase(memberRepo);
     const createSportUseCase = new CreateSportUseCase(sportRepo, sportValidator);
     const getSportsUseCase = new GetSportsUseCase(sportRepo);
+    const updateSportUseCase = new UpdateSportUseCase(sportRepo, sportValidator);
 
     const createDisciplineUseCase = new CreateDisciplineUseCase(disciplineRepo, disciplineValidator);
     const getDisciplinesUseCase = new GetDisciplinesUseCase(disciplineRepo);
@@ -74,7 +76,8 @@ export function buildApp() {
   
     const sportController = new SportController(
         createSportUseCase, 
-        getSportsUseCase
+        getSportsUseCase,
+        updateSportUseCase
     );
 
     const disciplineController = new DisciplineController(
@@ -105,6 +108,7 @@ export function buildApp() {
 
     server.get('/api/v1/sports', sportController.getAll.bind(sportController));
     server.post('/api/v1/sports', sportController.create.bind(sportController));
+    server.put('/api/v1/sports/:id', sportController.update.bind(sportController));
     server.get('/api/v1/disciplines', disciplineController.getAll.bind(disciplineController));
     server.post('/api/v1/disciplines', disciplineController.create.bind(disciplineController));
   
