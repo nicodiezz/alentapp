@@ -24,6 +24,12 @@ export class PaymentController {
             if (error.message.includes('debe')) {
                 return reply.status(400).send({ error: error.message });
             }
+            if (error.message.includes('obligatoria')) {
+                return reply.status(400).send({ error: error.message });
+            }
+            if (error.message.includes('No existe')) {
+                return reply.status(404).send({ error: error.message });
+            }
             return reply.status(500).send({ error: 'Error interno, reintente más tarde' });
         }
     }

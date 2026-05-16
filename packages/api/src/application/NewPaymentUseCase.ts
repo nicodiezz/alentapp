@@ -1,7 +1,7 @@
 import { PaymentRepository } from '../domain/PaymentRepository.js';
 import { PaymentValidator } from '../domain/services/PaymentValidator.js';
 import { PaymentDTO, CreatePaymentRequest } from '@alentapp/shared';
-import { MemberRepository } from "../domain/MemberRepository.js"; 
+import { MemberRepository } from "../domain/MemberRepository.js";
 
 export class CreatePaymentUseCase {
     constructor(
@@ -15,9 +15,7 @@ export class CreatePaymentUseCase {
         this.paymentValidator.validateMonth(data.month);
         this.paymentValidator.validateYear(data.year);
         this.paymentValidator.validateDueDate(data.due_date);
-        if (data.payment_date) {
-            this.paymentValidator.validatePaymentDate(data.payment_date, data.status);
-        }
+        this.paymentValidator.validatePaymentDate(data.payment_date || "", data.status);
         this.paymentValidator.validateStatus(data.status);
 
         const member = await this.memberRepository.findById(data.member_id);
