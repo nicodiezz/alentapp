@@ -231,7 +231,7 @@ export function LockersView() {
                         <SelectContent>
                           {statusCollection.items.map((item) => (
                             <SelectItem item={item} key={item.value}>
-                              {item.label}
+                              {item.value}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -254,7 +254,7 @@ export function LockersView() {
                         <SelectContent>
                           {memberCollection.items.map((item) => (
                             <SelectItem item={item} key={item.value}>
-                              {item.label}
+                              {item.value}
                             </SelectItem>
                           ))}
                         </SelectContent>

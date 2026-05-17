@@ -12,7 +12,9 @@ import { UpdateMemberUseCase } from './application/UpdateMemberUseCase.js';
 import { DeleteMemberUseCase } from './application/DeleteMemberUseCase.js';
 import { MemberController } from './delivery/MemberController.js';
 import { PaymentController } from './delivery/PaymentController.js';
-
+import { UpdatePaymentUseCase } from './application/UpdatePaymentUseCase.js';
+import { GetPaymentByIdUseCase } from './application/GetPaymentUseCase.js';
+import { CancelPaymentUseCase } from './application/CancelPaymentUseCase.js';
 
 import { PostgresSportRepository } from './infrastructure/PostgresSportRepository.js';
 import { SportValidator } from './domain/services/SportValidator.js';
@@ -54,18 +56,18 @@ export function buildApp() {
     const server = Fastify({
         logger: {
             level: 'info',
-            transport: process.env.NODE_ENV === 'development' 
-            ? {
-                target: 'pino-pretty',
-                options: { translateTime: 'HH:MM:ss Z', ignore: 'pid,hostname' },
-                } 
-            : undefined,
+            transport: process.env.NODE_ENV === 'development'
+                ? {
+                    target: 'pino-pretty',
+                    options: { translateTime: 'HH:MM:ss Z', ignore: 'pid,hostname' },
+                }
+                : undefined,
         },
     });
 
     server.register(cors, {
         origin: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,
     });
@@ -76,14 +78,17 @@ export function buildApp() {
     const paymentRepo = new PostgresPaymentRepository();
     const paymentValidator = new PaymentValidator();
     const createPaymentUseCase = new CreatePaymentUseCase(paymentRepo, paymentValidator, memberRepo);
+    const updatePaymentUseCase = new UpdatePaymentUseCase(paymentRepo, memberRepo, paymentValidator);
+    const getPaymentUseCase = new GetPaymentByIdUseCase(paymentRepo);
     const getPaymentsUseCase = new GetPaymentsUseCase(paymentRepo);
+    const cancelPaymentUseCase = new CancelPaymentUseCase(paymentRepo, paymentValidator);
     const disciplineRepo = new PostgresDisciplineRepository();
     const disciplineValidator = new DisciplineValidator();
 
 
     const sportRepo = new PostgresSportRepository();
     const sportValidator = new SportValidator(sportRepo);
-    
+
     const createMemberUseCase = new CreateMemberUseCase(memberRepo, memberValidator);
     const getMembersUseCase = new GetMembersUseCase(memberRepo);
     const updateMemberUseCase = new UpdateMemberUseCase(memberRepo, memberValidator);
@@ -120,21 +125,21 @@ export function buildApp() {
     );
 
     const memberController = new MemberController(
-        createMemberUseCase, 
+        createMemberUseCase,
         getMembersUseCase,
         updateMemberUseCase,
         deleteMemberUseCase
     );
-  
+
     const sportController = new SportController(
-        createSportUseCase, 
+        createSportUseCase,
         getSportsUseCase,
         updateSportUseCase,
         deleteSportUseCase
     );
 
     const disciplineController = new DisciplineController(
-        createDisciplineUseCase, 
+        createDisciplineUseCase,
         getDisciplinesUseCase,
         updateDisciplinesUseCase,
         deleteDisciplineUseCase
@@ -142,7 +147,10 @@ export function buildApp() {
 
     const paymentController = new PaymentController(
         createPaymentUseCase,
-        getPaymentsUseCase
+        getPaymentsUseCase,
+        getPaymentUseCase,
+        updatePaymentUseCase,
+        cancelPaymentUseCase
     );
 
     //medical certificate
@@ -166,8 +174,14 @@ export function buildApp() {
     server.put('/api/v1/socios/:id', memberController.update.bind(memberController));
     server.delete('/api/v1/socios/:id', memberController.delete.bind(memberController));
 
+    //rutas payment
     server.post('/api/v1/payments', paymentController.create.bind(paymentController));
     server.get('/api/v1/payments', paymentController.findAll.bind(paymentController));
+    server.get('/api/v1/payments/:id', paymentController.findById.bind(paymentController));
+    server.put('/api/v1/payments/:id', paymentController.update.bind(paymentController));
+    server.patch('/api/v1/payments/:id', paymentController.cancel.bind(paymentController));
+
+
     server.get('/api/v1/sports', sportController.getAll.bind(sportController));
     server.post('/api/v1/sports', sportController.create.bind(sportController));
     server.put('/api/v1/sports/:id', sportController.update.bind(sportController));
@@ -177,13 +191,14 @@ export function buildApp() {
     server.put('/api/v1/disciplines/:id', disciplineController.update.bind(disciplineController));
     server.delete('/api/v1/disciplines/:id', disciplineController.delete.bind(disciplineController));
 
-  //rutas medical certificate
+    //rutas medical certificate
     server.post('/api/v1/medical-certificates', medicalCertificateController.create.bind(medicalCertificateController));
     server.get('/api/v1/medical-certificates', medicalCertificateController.getAll.bind(medicalCertificateController));
     server.put('/api/v1/medical-certificates/:id', medicalCertificateController.update.bind(medicalCertificateController));
     server.delete('/api/v1/medical-certificates/:id', medicalCertificateController.delete.bind(medicalCertificateController));
     //rutas equipment loans
     server.post('/api/v1/equipment-loans', equipmentLoanController.create.bind(equipmentLoanController));
+
     server.put('/api/v1/equipment-loans/:id', equipmentLoanController.update.bind(equipmentLoanController));
     server.get('/api/v1/equipment-loans', equipmentLoanController.getAll.bind(equipmentLoanController));
     server.delete('/api/v1/equipment-loans/:id', equipmentLoanController.delete.bind(equipmentLoanController));

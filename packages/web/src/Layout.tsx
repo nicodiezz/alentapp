@@ -1,4 +1,5 @@
 import { Provider } from './components/ui/provider';
+import { Toaster } from '././components/ui/toaster';
 import { Box, Container, Flex, Text, HStack } from '@chakra-ui/react';
 
 import { Outlet, Link as RouterLink } from "react-router";
@@ -9,12 +10,12 @@ function Layout() {
             <Box as="nav" borderBottomWidth="1px" py="4" px="8" bg="bg.panel" boxShadow="sm" position="sticky" top="0" zIndex="docked">
                 <Flex justify="space-between" align="center" maxW="7xl" mx="auto">
                     <RouterLink to="/">
-                        <Text 
-                            fontSize="2xl" 
-                            fontWeight="bold" 
-                            bgGradient="to-r" 
-                            gradientFrom="blue.600" 
-                            gradientTo="cyan.500" 
+                        <Text
+                            fontSize="2xl"
+                            fontWeight="bold"
+                            bgGradient="to-r"
+                            gradientFrom="blue.600"
+                            gradientTo="cyan.500"
                             bgClip="text"
                         >
                             Alentapp
@@ -22,10 +23,10 @@ function Layout() {
                     </RouterLink>
                     <HStack gap="10">
                         <RouterLink to="/members">
-                            <Text 
-                                fontWeight="semibold" 
-                                fontSize="sm" 
-                                textTransform="uppercase" 
+                            <Text
+                                fontWeight="semibold"
+                                fontSize="sm"
+                                textTransform="uppercase"
                                 letterSpacing="wider"
                                 color="fg.muted"
                                 _hover={{ color: "blue.500", textDecoration: "none" }}
@@ -35,9 +36,9 @@ function Layout() {
                         </RouterLink>
                         <RouterLink to="/payments">
                             <Text
-                                fontWeight="semibold" 
-                                fontSize="sm" 
-                                textTransform="uppercase" 
+                                fontWeight="semibold"
+                                fontSize="sm"
+                                textTransform="uppercase"
                                 letterSpacing="wider"
                                 color="fg.muted"
                                 _hover={{ color: "blue.500", textDecoration: "none" }}
@@ -45,11 +46,11 @@ function Layout() {
                                 Pagos
                             </Text>
                         </RouterLink>
-                         <RouterLink to="/sports">
-                            <Text 
-                                fontWeight="semibold" 
-                                fontSize="sm" 
-                                textTransform="uppercase" 
+                        <RouterLink to="/sports">
+                            <Text
+                                fontWeight="semibold"
+                                fontSize="sm"
+                                textTransform="uppercase"
                                 letterSpacing="wider"
                                 color="fg.muted"
                                 _hover={{ color: "blue.500", textDecoration: "none" }}
@@ -57,12 +58,12 @@ function Layout() {
                                 Deportes
                             </Text>
                         </RouterLink>
-                          
-                         <RouterLink to="/disciplines">
-                            <Text 
-                                fontWeight="semibold" 
-                                fontSize="sm" 
-                                textTransform="uppercase" 
+
+                        <RouterLink to="/disciplines">
+                            <Text
+                                fontWeight="semibold"
+                                fontSize="sm"
+                                textTransform="uppercase"
                                 letterSpacing="wider"
                                 color="fg.muted"
                                 _hover={{ color: "blue.500", textDecoration: "none" }}
@@ -71,7 +72,7 @@ function Layout() {
                             </Text>
                         </RouterLink>
 
-                         <RouterLink to="/lockers">
+                        <RouterLink to="/lockers">
                             <Text
                                 fontWeight="semibold"
                                 fontSize="sm"
@@ -93,7 +94,7 @@ function Layout() {
                                 color="fg.muted"
                                 _hover={{ color: "blue.500", textDecoration: "none" }}
                             >
-                                Equipamiento
+                                Préstamo de Equipamiento
                             </Text>
                         </RouterLink>
                         
@@ -109,13 +110,14 @@ function Layout() {
                                 Certificados Médicos
                             </Text>
                         </RouterLink>
-                      
+
                     </HStack>
                 </Flex>
             </Box>
             <Container maxW="7xl" py="10">
                 <Outlet />
             </Container>
+            <Toaster />
         </Provider>
     );
 }
