@@ -121,22 +121,14 @@ export const paymentsService = {
     };
   },
 
-  async cancel(id: string): Promise<PaymentDTO> {
+  async cancel(id: string): Promise<void> {
     const response = await fetch(`${API_URL}/payments/${id}/cancel`, {
-      method: 'PUT',
+      method: 'PATCH',
     });
 
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || 'Error al cancelar el pago');
     }
-
-    const result = await response.json();
-
-    return {
-      ...result.data,
-      due_date: formatDate(result.data.due_date),
-      payment_date: formatDate(result.data.payment_date),
-    };
   },
 };

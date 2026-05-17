@@ -93,7 +93,7 @@ export class PaymentController {
     ) {
         try {
             const payment = await this.cancelPaymentUseCase.execute(request.params.id);
-            return reply.status(200).send({ data: payment });
+            return reply.status(204).send();
         } catch (error: any) {
             if (error.message.includes('El pago ya se encuentra cancelado')) {
                 return reply.status(409).send({ error: error.message });

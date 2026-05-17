@@ -64,7 +64,7 @@ export function buildApp() {
 
     server.register(cors, {
         origin: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,
     });
@@ -166,7 +166,7 @@ export function buildApp() {
     server.get('/api/v1/payments', paymentController.findAll.bind(paymentController));
     server.get('/api/v1/payments/:id', paymentController.findById.bind(paymentController));
     server.put('/api/v1/payments/:id', paymentController.update.bind(paymentController));
-    server.put('/api/v1/payments/:id/cancel', paymentController.cancel.bind(paymentController));
+    server.patch('/api/v1/payments/:id/cancel', paymentController.cancel.bind(paymentController));
 
 
     server.get('/api/v1/sports', sportController.getAll.bind(sportController));
@@ -191,7 +191,7 @@ export function buildApp() {
     //rutas lockers
     server.get('/api/v1/lockers', lockerController.getAll.bind(lockerController));
     server.post('/api/v1/lockers', lockerController.create.bind(lockerController));
-    
+
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
     });
