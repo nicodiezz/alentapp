@@ -15,6 +15,13 @@ export class EquipmentLoanValidator {
         }
     }
 
+    validateStatus(status: string): void {
+        const allowedStatuses = ['Loaned', 'Returned', 'Damaged'];
+        if (!allowedStatuses.includes(status)) {
+            throw new Error('El estado del préstamo no es válido');
+        }
+    }
+
     validateDateFormat(date: string | Date): void {
         if (date instanceof Date) {
             if (Number.isNaN(date.getTime())) {
