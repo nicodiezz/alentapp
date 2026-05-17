@@ -40,6 +40,11 @@ import { EquipmentLoanValidator } from './domain/services/EquipmentLoanValidator
 import { CreateEquipmentLoanUseCase } from './application/NewEquipmentLoanUseCase.js';
 import { UpdateEquipmentLoanUseCase } from './application/UpdateEquipmentLoanUseCase.js';
 import { EquipmentLoanController } from './delivery/EquipmentLoanController.js';
+import { PostgresLockerRepository } from './infrastructure/PostgresLockerRepository.js';
+import { LockerValidator } from './domain/services/LockerValidator.js';
+import { CreateLockerUseCase } from './application/NewLockerUseCase.js';
+import { GetLockersUseCase } from './application/GetLockersUseCase.js';
+import { LockerController } from './delivery/LockerController.js';
 
 export function buildApp() {
     const server = Fastify({
@@ -93,6 +98,11 @@ export function buildApp() {
     const createEquipmentLoanUseCase = new CreateEquipmentLoanUseCase(equipmentLoanRepo, equipmentLoanValidator);
     const updateEquipmentLoanUseCase = new UpdateEquipmentLoanUseCase(equipmentLoanRepo, equipmentLoanValidator);
     const equipmentLoanController = new EquipmentLoanController(createEquipmentLoanUseCase, updateEquipmentLoanUseCase);
+    const lockerRepo = new PostgresLockerRepository();
+    const lockerValidator = new LockerValidator(lockerRepo);
+    const createLockerUseCase = new CreateLockerUseCase(lockerRepo, lockerValidator);
+    const getLockersUseCase = new GetLockersUseCase(lockerRepo);
+    const lockerController = new LockerController(createLockerUseCase, getLockersUseCase);
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -160,6 +170,9 @@ export function buildApp() {
     //rutas equipment loans
     server.post('/api/v1/equipment-loans', equipmentLoanController.create.bind(equipmentLoanController));
     server.put('/api/v1/equipment-loans/:id', equipmentLoanController.update.bind(equipmentLoanController));
+    //rutas lockers
+    server.get('/api/v1/lockers', lockerController.getAll.bind(lockerController));
+    server.post('/api/v1/lockers', lockerController.create.bind(lockerController));
     
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
