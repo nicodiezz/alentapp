@@ -3,12 +3,14 @@ import { CreateLockerRequest, UpdateLockerRequest } from '@alentapp/shared';
 import { CreateLockerUseCase } from '../application/NewLockerUseCase.js';
 import { GetLockersUseCase } from '../application/GetLockersUseCase.js';
 import { UpdateLockerUseCase } from '../application/UpdateLockerUseCase.js';
+import { DeleteLockerUseCase } from '../application/DeleteLockerUseCase.js';
 
 export class LockerController {
     constructor(
         private readonly createLockerUseCase: CreateLockerUseCase,
         private readonly getLockersUseCase: GetLockersUseCase,
         private readonly updateLockerUseCase: UpdateLockerUseCase,
+        private readonly deleteLockerUseCase: DeleteLockerUseCase,
     ) {}
 
     async getAll(_request: FastifyRequest, reply: FastifyReply) {
@@ -69,6 +71,22 @@ export class LockerController {
                 return reply.status(400).send({ error: error.message });
             }
             return reply.status(500).send({ error: 'Error interno, reintente mas tarde' });
+        }
+    }
+
+    async delete(
+        request: FastifyRequest<{ Params: { id: string } }>,
+        reply: FastifyReply,
+    ) {
+        try {
+            const { id } = request.params;
+            await this.deleteLockerUseCase.execute(id);
+            return reply.status(204).send();
+        } catch (error: any) {
+            if (error.message.includes('El Locker no existe')) {
+                return reply.status(404).send({ error: error.message });
+            }
+            return reply.status(400).send({ error: error.message });
         }
     }
 }

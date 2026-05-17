@@ -11,7 +11,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { LuPencil, LuPlus, LuRefreshCw } from "react-icons/lu";
+import { LuPencil, LuPlus, LuRefreshCw, LuTrash2 } from "react-icons/lu";
 import { useEffect, useState } from "react";
 import type { CreateLockerRequest, LockerDTO, LockerStatus, MemberDTO, UpdateLockerRequest } from "@alentapp/shared";
 import { lockersService } from "../services/lockers";
@@ -132,6 +132,19 @@ export function LockersView() {
       alert(err.message || "Error al guardar el casillero");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteLocker = async (id: string) => {
+    if (!window.confirm("Estas seguro de que deseas eliminar este casillero? Esta accion no se puede deshacer.")) {
+      return;
+    }
+
+    try {
+      await lockersService.delete(id);
+      fetchLockers();
+    } catch (err: any) {
+      alert(err.message || "Error al eliminar el casillero");
     }
   };
 
@@ -337,6 +350,14 @@ export function LockersView() {
                             onClick={() => openEditModal(locker)}
                           >
                             <LuPencil /> Editar
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            colorPalette="red"
+                            onClick={() => handleDeleteLocker(locker.id)}
+                          >
+                            <LuTrash2 /> Eliminar
                           </Button>
                         </HStack>
                       </Table.Cell>
