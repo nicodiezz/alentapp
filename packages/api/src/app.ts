@@ -14,6 +14,7 @@ import { MemberController } from './delivery/MemberController.js';
 import { PaymentController } from './delivery/PaymentController.js';
 import { UpdatePaymentUseCase } from './application/UpdatePaymentUseCase.js';
 import { GetPaymentByIdUseCase } from './application/GetPaymentUseCase.js';
+import { CancelPaymentUseCase } from './application/CancelPaymentUseCase.js';
 
 import { PostgresSportRepository } from './infrastructure/PostgresSportRepository.js';
 import { SportValidator } from './domain/services/SportValidator.js';
@@ -77,6 +78,7 @@ export function buildApp() {
     const updatePaymentUseCase = new UpdatePaymentUseCase(paymentRepo, memberRepo, paymentValidator);
     const getPaymentUseCase = new GetPaymentByIdUseCase(paymentRepo);
     const getPaymentsUseCase = new GetPaymentsUseCase(paymentRepo);
+    const cancelPaymentUseCase = new CancelPaymentUseCase(paymentRepo, paymentValidator);
     const disciplineRepo = new PostgresDisciplineRepository();
     const disciplineValidator = new DisciplineValidator();
 
@@ -134,7 +136,8 @@ export function buildApp() {
         createPaymentUseCase,
         getPaymentsUseCase,
         getPaymentUseCase,
-        updatePaymentUseCase
+        updatePaymentUseCase,
+        cancelPaymentUseCase
     );
 
     //medical certificate
@@ -163,6 +166,7 @@ export function buildApp() {
     server.get('/api/v1/payments', paymentController.findAll.bind(paymentController));
     server.get('/api/v1/payments/:id', paymentController.findById.bind(paymentController));
     server.put('/api/v1/payments/:id', paymentController.update.bind(paymentController));
+    server.put('/api/v1/payments/:id/cancel', paymentController.cancel.bind(paymentController));
 
 
     server.get('/api/v1/sports', sportController.getAll.bind(sportController));
