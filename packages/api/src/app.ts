@@ -35,6 +35,10 @@ import { GetMedicalCertificatesUseCase } from './application/GetMedicalCertifica
 import { UpdateMedicalCertificateUseCase } from './application/UpdateMedicalCertificateUseCase.js';
 import { DeleteMedicalCertificateUseCase } from './application/DeleteMedicalCertificateUseCase.js';
 import { MedicalCertificateController } from './delivery/MedicalCertificateController.js';
+import { PostgresEquipmentLoanRepository } from './infrastructure/PostgresEquipmentLoanRepository.js';
+import { EquipmentLoanValidator } from './domain/services/EquipmentLoanValidator.js';
+import { CreateEquipmentLoanUseCase } from './application/NewEquipmentLoanUseCase.js';
+import { EquipmentLoanController } from './delivery/EquipmentLoanController.js';
 
 export function buildApp() {
     const server = Fastify({
@@ -83,6 +87,10 @@ export function buildApp() {
     const getDisciplinesUseCase = new GetDisciplinesUseCase(disciplineRepo);
     const updateDisciplinesUseCase = new UpdateDisciplineUseCase(disciplineRepo, disciplineValidator, memberRepo);
     const deleteDisciplineUseCase = new DeleteDisciplineUseCase(disciplineRepo);
+    const equipmentLoanRepo = new PostgresEquipmentLoanRepository();
+    const equipmentLoanValidator = new EquipmentLoanValidator(memberRepo);
+    const createEquipmentLoanUseCase = new CreateEquipmentLoanUseCase(equipmentLoanRepo, equipmentLoanValidator);
+    const equipmentLoanController = new EquipmentLoanController(createEquipmentLoanUseCase);
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -147,6 +155,8 @@ export function buildApp() {
     server.get('/api/v1/medical-certificates', medicalCertificateController.getAll.bind(medicalCertificateController));
     server.put('/api/v1/medical-certificates/:id', medicalCertificateController.update.bind(medicalCertificateController));
     server.delete('/api/v1/medical-certificates/:id', medicalCertificateController.delete.bind(medicalCertificateController));
+    //rutas equipment loans
+    server.post('/api/v1/equipment-loans', equipmentLoanController.create.bind(equipmentLoanController));
     
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })

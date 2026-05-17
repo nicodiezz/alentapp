@@ -141,3 +141,24 @@ export interface UpdateSportRequest {
   description?: string;
   max_capacity?: number;
 }
+// ==========================================
+// Equipment Loan
+// ==========================================
+
+export type EquipmentLoanStatus = 'Loaned' | 'Returned' | 'Damaged'
+export interface EquipmentLoanDTO {
+  id: string; // UUID
+  item_name: string;
+  status: EquipmentLoanDTO;
+  loan_date: string; // ISO Date String (YYYY-MM-DD)
+  due_date: string; // ISO Date String (YYYY-MM-DD)
+  member_id: string;
+}
+
+
+export interface CreateEquipmentLoanRequest {
+  item_name: string;
+  loan_date: string; // ISO Date String (YYYY-MM-DD)
+  due_date: string; // ISO Date String (YYYY-MM-DD)
+  member_id: string;
+}
