@@ -1,4 +1,4 @@
-import { CreatePaymentStatus } from '@alentapp/shared';
+import { CreatePaymentStatus, PaymentStatus } from '@alentapp/shared';
 
 export class PaymentValidator {
 
@@ -106,6 +106,12 @@ export class PaymentValidator {
             if (date < today) {
                 throw new Error('La fecha de pago debe ser mayor o igual a la fecha actual');
             }
+        }
+    }
+
+    cancelPayment(status: PaymentStatus): void {
+        if (status === 'Canceled') {
+            throw new Error('El pago ya se encuentra cancelado');
         }
     }
 }
