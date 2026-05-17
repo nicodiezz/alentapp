@@ -35,6 +35,7 @@ import { MedicalCertificateController } from './delivery/MedicalCertificateContr
 import { PostgresEquipmentLoanRepository } from './infrastructure/PostgresEquipmentLoanRepository.js';
 import { EquipmentLoanValidator } from './domain/services/EquipmentLoanValidator.js';
 import { CreateEquipmentLoanUseCase } from './application/NewEquipmentLoanUseCase.js';
+import { UpdateEquipmentLoanUseCase } from './application/UpdateEquipmentLoanUseCase.js';
 import { EquipmentLoanController } from './delivery/EquipmentLoanController.js';
 
 export function buildApp() {
@@ -84,7 +85,8 @@ export function buildApp() {
     const equipmentLoanRepo = new PostgresEquipmentLoanRepository();
     const equipmentLoanValidator = new EquipmentLoanValidator(memberRepo);
     const createEquipmentLoanUseCase = new CreateEquipmentLoanUseCase(equipmentLoanRepo, equipmentLoanValidator);
-    const equipmentLoanController = new EquipmentLoanController(createEquipmentLoanUseCase);
+    const updateEquipmentLoanUseCase = new UpdateEquipmentLoanUseCase(equipmentLoanRepo, equipmentLoanValidator);
+    const equipmentLoanController = new EquipmentLoanController(createEquipmentLoanUseCase, updateEquipmentLoanUseCase);
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -144,6 +146,7 @@ export function buildApp() {
     server.put('/api/v1/medical-certificates/:id', medicalCertificateController.update.bind(medicalCertificateController));
     server.delete('/api/v1/medical-certificates/:id', medicalCertificateController.delete.bind(medicalCertificateController));
     server.post('/api/v1/equipment-loans', equipmentLoanController.create.bind(equipmentLoanController));
+    server.put('/api/v1/equipment-loans/:id', equipmentLoanController.update.bind(equipmentLoanController));
     
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
