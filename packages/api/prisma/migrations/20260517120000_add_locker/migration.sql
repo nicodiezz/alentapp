@@ -15,5 +15,8 @@ CREATE TABLE "lockers" (
 -- CreateIndex
 CREATE UNIQUE INDEX "lockers_number_key" ON "lockers"("number");
 
+-- CreateIndex
+CREATE INDEX "lockers_number_idx" ON "lockers"("number");
+
 -- AddForeignKey
 ALTER TABLE "lockers" ADD CONSTRAINT "lockers_member_id_fkey" FOREIGN KEY ("member_id") REFERENCES "members"("id") ON DELETE SET NULL ON UPDATE CASCADE;

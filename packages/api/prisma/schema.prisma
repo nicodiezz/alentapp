@@ -134,5 +134,6 @@ model Locker {
     member_id String?
     member    Member?      @relation(fields: [member_id], references: [id])
 
+    @@index([number])
     @@map("lockers")
 }
