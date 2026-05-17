@@ -25,6 +25,7 @@ import { DisciplineValidator } from './domain/services/DisciplineValidator.js';
 import { CreateDisciplineUseCase } from './application/NewDisciplineUseCase.js';
 import { GetDisciplinesUseCase } from './application/GetDisciplinesUseCase.js';
 import { UpdateDisciplineUseCase } from './application/UpdateDisciplineUseCase.js';
+import { DeleteDisciplineUseCase } from './application/DeleteDisciplineUseCase.js';
 import { DisciplineController } from './delivery/DisciplineController.js';
 import { PostgresMedicalCertificateRepository } from './infrastructure/PostgresMedicalCertificateRepository.js';
 import { MedicalCertificateValidator } from './domain/services/MedicalCertificateValidator.js';
@@ -79,6 +80,7 @@ export function buildApp() {
     const createDisciplineUseCase = new CreateDisciplineUseCase(disciplineRepo, disciplineValidator, memberRepo);
     const getDisciplinesUseCase = new GetDisciplinesUseCase(disciplineRepo);
     const updateDisciplinesUseCase = new UpdateDisciplineUseCase(disciplineRepo, disciplineValidator, memberRepo);
+    const deleteDisciplineUseCase = new DeleteDisciplineUseCase(disciplineRepo);
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -97,6 +99,7 @@ export function buildApp() {
         createDisciplineUseCase, 
         getDisciplinesUseCase,
         updateDisciplinesUseCase,
+        deleteDisciplineUseCase
     );
 
     const paymentController = new PaymentController(
@@ -133,7 +136,8 @@ export function buildApp() {
     server.get('/api/v1/disciplines', disciplineController.getAll.bind(disciplineController));
     server.post('/api/v1/disciplines', disciplineController.create.bind(disciplineController));
     server.put('/api/v1/disciplines/:id', disciplineController.update.bind(disciplineController));
-  
+    server.delete('/api/v1/disciplines/:id', disciplineController.delete.bind(disciplineController));
+
   //rutas medical certificate
     server.post('/api/v1/medical-certificates', medicalCertificateController.create.bind(medicalCertificateController));
     server.get('/api/v1/medical-certificates', medicalCertificateController.getAll.bind(medicalCertificateController));
