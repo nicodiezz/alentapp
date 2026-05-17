@@ -33,6 +33,8 @@ function Layout() {
                                 Miembros
                             </Text>
                         </RouterLink>
+                        <RouterLink to="/payments">
+                            <Text
 
                          <RouterLink to="/sports">
                             <Text 
@@ -43,6 +45,9 @@ function Layout() {
                                 color="fg.muted"
                                 _hover={{ color: "blue.500", textDecoration: "none" }}
                             >
+                                Pagos
+                            </Text>
+                        </RouterLink>
                                 Deportes
                             </Text>
                         </RouterLink>
