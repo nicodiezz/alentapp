@@ -107,7 +107,7 @@ export function buildApp() {
     const createMedicalCertificateUseCase = new CreateMedicalCertificateUseCase(medicalCertificateRepo, medicalCertificateValidator);
     const getMedicalCertificatesUseCase = new GetMedicalCertificatesUseCase(medicalCertificateRepo);
     const updateMedicalCertificateUseCase = new UpdateMedicalCertificateUseCase(medicalCertificateRepo, medicalCertificateValidator);
-    const deleteMedicalCertificateUseCase = new DeleteMedicalCertificateUseCase(medicalCertificateRepo, medicalCertificateValidator);
+    const deleteMedicalCertificateUseCase = new DeleteMedicalCertificateUseCase(medicalCertificateRepo);
 
     const medicalCertificateController = new MedicalCertificateController(
         createMedicalCertificateUseCase,
