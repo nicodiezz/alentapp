@@ -1,6 +1,8 @@
-import { PaymentDTO, CreatePaymentRequest } from '@alentapp/shared';
+import { PaymentDTO, CreatePaymentRequest, UpdatePaymentRequest } from '@alentapp/shared';
 
 export interface PaymentRepository {
   create(payment: CreatePaymentRequest): Promise<PaymentDTO>;
   findAll(): Promise<PaymentDTO[]>;
+  findById(id: string): Promise<PaymentDTO | null>;
+  update(id: string, data: UpdatePaymentRequest): Promise<PaymentDTO>;
 }

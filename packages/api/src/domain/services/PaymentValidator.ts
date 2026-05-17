@@ -35,10 +35,13 @@ export class PaymentValidator {
             throw new Error('Fecha de vencimiento inválida');
         }
         const dueDate = new Date(due_date);
-        if (!isNaN(dueDate.getTime())) {
-            if (dueDate < new Date()) {
-                throw new Error('La fecha de vencimiento debe ser mayor o igual a la fecha actual');
-            }
+        if (isNaN(dueDate.getTime())) {
+            throw new Error('Fecha de vencimiento inválida');
+        }
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (dueDate < today) {
+            throw new Error('La fecha de vencimiento debe ser mayor o igual a la fecha actual');
         }
     }
 
@@ -63,7 +66,9 @@ export class PaymentValidator {
         }
 
         if (status === 'Paid' && !isNaN(date.getTime())) {
-            if (date < new Date()) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (date < today) {
                 throw new Error('La fecha de pago debe ser mayor o igual a la fecha actual');
             }
         }
@@ -72,6 +77,35 @@ export class PaymentValidator {
     validateStatus(status: CreatePaymentStatus): void {
         if (status !== 'Paid' && status !== 'Pending') {
             throw new Error('El estado debe ser "Pendiente" o "Pagado"');
+        }
+    }
+
+    updatePaymentDate(payment_date: string, status: CreatePaymentStatus): void {
+
+        if (status === 'Paid' && !payment_date) {
+            throw new Error(`La fecha de pago es obligatoria si el estado es Pagado`);
+        }
+
+        if (!payment_date) {
+            return;
+        }
+
+        const date = new Date(payment_date);
+
+        if (isNaN(date.getTime())) {
+            throw new Error('Fecha de pago inválida');
+        }
+
+        if (status !== 'Paid') {
+            throw new Error('El estado debe ser "Pagado"');
+        }
+
+        if (status === 'Paid' && !isNaN(date.getTime())) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (date < today) {
+                throw new Error('La fecha de pago debe ser mayor o igual a la fecha actual');
+            }
         }
     }
 }
