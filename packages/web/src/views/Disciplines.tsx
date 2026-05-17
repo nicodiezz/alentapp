@@ -13,7 +13,7 @@ import {
   Input,
   Checkbox,
 } from "@chakra-ui/react";
-import { LuPlus, LuPencil, LuRefreshCw } from "react-icons/lu";
+import { LuPlus, LuPencil, LuTrash2, LuRefreshCw } from "react-icons/lu";
 import { useEffect, useState } from "react";
 import { disciplinesService } from "../services/disciplines";
 import { membersService } from "../services/members";
@@ -113,9 +113,20 @@ export function DisciplinesView() {
       setIsDialogOpen(false);
       fetchData();
     } catch (err: any) {
-      alert(err.message || "Error al guardar la sanción");
+      alert(err.message || "Error al guardar la suspensión");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteDiscipline = async (id: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta suspensión? Esta acción no se puede deshacer.')) {
+      try {
+        await disciplinesService.delete(id);
+        fetchData();
+      } catch (err: any) {
+        alert(err.message || 'Error al eliminar la suspensión');
+      }
     }
   };
 
@@ -142,7 +153,7 @@ export function DisciplinesView() {
               <LuRefreshCw /> Actualizar
             </Button>
             <Button colorPalette="blue" size="md" onClick={openCreateModal}>
-              <LuPlus /> Nueva Sanción
+              <LuPlus /> Nueva suspensión
             </Button>
           </HStack>
         </Flex>
@@ -150,7 +161,7 @@ export function DisciplinesView() {
         <DialogContent>
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>{editingDisciplineId ? "Editar Sanción Disciplinaria" : "Nueva Sanción Disciplinaria"}</DialogTitle>
+              <DialogTitle>{editingDisciplineId ? "Editar suspensión Disciplinaria" : "Nueva suspensión Disciplinaria"}</DialogTitle>
             </DialogHeader>
             <DialogBody>
               <Stack gap="4">
@@ -213,7 +224,7 @@ export function DisciplinesView() {
                 <Button variant="outline">Cancelar</Button>
               </DialogActionTrigger>
               <Button type="submit" colorPalette="blue" loading={isSubmitting}>
-                {editingDisciplineId ? "Guardar Cambios" : "Crear Sanción"}
+                {editingDisciplineId ? "Guardar Cambios" : "Crear suspensión"}
               </Button>
             </DialogFooter>
             <DialogCloseTrigger />
@@ -287,14 +298,25 @@ export function DisciplinesView() {
                       </Box>
                     </Table.Cell>
                     <Table.Cell textAlign="end">
-                      <IconButton
-                        variant="ghost"
-                        size="sm"
-                        aria-label="Editar sanción"
-                        onClick={() => openEditModal(discipline)}
-                      >
-                        <LuPencil />
-                      </IconButton>
+                      <HStack gap="2" justify="flex-end">
+                        <IconButton
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Editar suspensión"
+                          onClick={() => openEditModal(discipline)}
+                        >
+                          <LuPencil />
+                        </IconButton>
+                        <IconButton
+                          variant="ghost"
+                          size="sm"
+                          colorPalette="red"
+                          aria-label="Eliminar suspensión"
+                          onClick={() => handleDeleteDiscipline(discipline.id)}
+                        >
+                          <LuTrash2 />
+                        </IconButton>
+                      </HStack>
                     </Table.Cell>
                   </Table.Row>
                 ))}

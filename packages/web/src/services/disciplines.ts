@@ -6,7 +6,7 @@ export const disciplinesService = {
   async getAll(): Promise<DisciplineDTO[]> {
     const response = await fetch(`${API_URL}/disciplines`);
     if (!response.ok) {
-      throw new Error('Error al obtener las disciplinas');
+      throw new Error('Error al obtener las suspensiones');
     }
     const result = await response.json();
     return result.data;
@@ -22,7 +22,7 @@ export const disciplinesService = {
     });
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || 'Error al crear la sanción');
+      throw new Error(errorData.error || 'Error al crear la suspensión');
     }
     const result = await response.json();
     return result.data;
@@ -38,10 +38,19 @@ export const disciplinesService = {
     });
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || 'Error al actualizar la sanción');
+      throw new Error(errorData.error || 'Error al actualizar la suspensión');
     }
     const result = await response.json();
     return result.data;
   },
 
+  async delete(id: string): Promise<void> {
+    const response = await fetch(`${API_URL}/disciplines/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al eliminar la suspensión');
+    }
+  },
 };

@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { CreateDisciplineUseCase } from '../application/NewDisciplineUseCase.js';
 import { GetDisciplinesUseCase } from '../application/GetDisciplinesUseCase.js';
 import { UpdateDisciplineUseCase } from '../application/UpdateDisciplineUseCase.js';
+import { DeleteDisciplineUseCase } from '../application/DeleteDisciplineUseCase.js';
 import { CreateDisciplineRequest, UpdateDisciplineRequest } from '@alentapp/shared';
 
 export class DisciplineController {
@@ -9,6 +10,7 @@ export class DisciplineController {
         private readonly createDisciplineUseCase: CreateDisciplineUseCase,
         private readonly getDisciplinesUseCase: GetDisciplinesUseCase,
         private readonly updateDisciplineUseCase: UpdateDisciplineUseCase,
+        private readonly deleteDisciplineUseCase: DeleteDisciplineUseCase,
     ) {}
 
     async getAll(_request: FastifyRequest, reply: FastifyReply) {
@@ -63,6 +65,22 @@ export class DisciplineController {
                 return reply.status(400).send({ error: error.message });
             }
             return reply.status(500).send({ error: "Error interno, reintente más tarde" });
+        }
+    }
+
+    async delete(
+        request: FastifyRequest<{ Params: { id: string } }>,
+        reply: FastifyReply,
+    ) {
+        try {
+            const { id } = request.params;
+            await this.deleteDisciplineUseCase.execute(id);
+            return reply.status(204).send(); // No Content
+        } catch (error: any) {
+            if (error.message.includes('La suspensión no existe')) {
+                return reply.status(404).send({ error: error.message });
+            }
+            return reply.status(500).send({ error: 'Error interno, reintente más tarde' });
         }
     }
 }
