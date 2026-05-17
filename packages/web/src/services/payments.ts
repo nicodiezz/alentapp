@@ -122,7 +122,7 @@ export const paymentsService = {
   },
 
   async cancel(id: string): Promise<void> {
-    const response = await fetch(`${API_URL}/payments/${id}/cancel`, {
+    const response = await fetch(`${API_URL}/payments/${id}`, {
       method: 'PATCH',
     });
 

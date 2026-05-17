@@ -166,7 +166,7 @@ export function buildApp() {
     server.get('/api/v1/payments', paymentController.findAll.bind(paymentController));
     server.get('/api/v1/payments/:id', paymentController.findById.bind(paymentController));
     server.put('/api/v1/payments/:id', paymentController.update.bind(paymentController));
-    server.patch('/api/v1/payments/:id/cancel', paymentController.cancel.bind(paymentController));
+    server.patch('/api/v1/payments/:id', paymentController.cancel.bind(paymentController));
 
 
     server.get('/api/v1/sports', sportController.getAll.bind(sportController));
