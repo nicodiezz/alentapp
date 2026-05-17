@@ -1,15 +1,4 @@
-import { MemberRepository } from '../MemberRepository.js';
-
 export class DisciplineValidator {
-    constructor(private readonly memberRepo: MemberRepository) {}
-
-    async validateMemberExists(member_id: string): Promise<void> {
-        const member = await this.memberRepo.findById(member_id);
-        if (!member) {
-            throw new Error('El miembro indicado no existe');
-        }
-    }
-
     validateDates(issue_date: string | Date, expiry_date: string | Date): void {
         if (issue_date > expiry_date) {
             throw new Error('La fecha de fin de suspensión no puede ser previa a la fecha de inicio');
