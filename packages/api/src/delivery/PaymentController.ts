@@ -4,6 +4,7 @@ import { CreatePaymentRequest, UpdatePaymentRequest } from '@alentapp/shared';
 import { GetPaymentsUseCase } from '../application/GetPaymentsUseCase.js';
 import { GetPaymentByIdUseCase } from '../application/GetPaymentUseCase.js';
 import { UpdatePaymentUseCase } from '../application/UpdatePaymentUseCase.js';
+import { CancelPaymentUseCase } from '../application/CancelPaymentUseCase.js';
 
 export class PaymentController {
     constructor(
@@ -11,7 +12,7 @@ export class PaymentController {
         private readonly getPaymentsUseCase: GetPaymentsUseCase,
         private readonly getPaymentByIdUseCase: GetPaymentByIdUseCase,
         private readonly updatePaymentUseCase: UpdatePaymentUseCase,
-
+        private readonly cancelPaymentUseCase: CancelPaymentUseCase,
     ) { }
 
     async create(
@@ -78,6 +79,24 @@ export class PaymentController {
             }
             if (error.message.includes('obligatoria')) {
                 return reply.status(400).send({ error: error.message });
+            }
+            if (error.message.includes('No existe')) {
+                return reply.status(404).send({ error: error.message });
+            }
+            return reply.status(500).send({ error: 'Error interno, reintente más tarde' });
+        }
+    }
+
+    async cancel(
+        request: FastifyRequest<{ Params: { id: string } }>,
+        reply: FastifyReply,
+    ) {
+        try {
+            const payment = await this.cancelPaymentUseCase.execute(request.params.id);
+            return reply.status(200).send({ data: payment });
+        } catch (error: any) {
+            if (error.message.includes('El pago ya se encuentra cancelado')) {
+                return reply.status(409).send({ error: error.message });
             }
             if (error.message.includes('No existe')) {
                 return reply.status(404).send({ error: error.message });
