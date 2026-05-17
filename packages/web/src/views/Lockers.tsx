@@ -11,10 +11,11 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { LuPlus, LuRefreshCw } from "react-icons/lu";
+import { LuPencil, LuPlus, LuRefreshCw } from "react-icons/lu";
 import { useEffect, useState } from "react";
-import type { CreateLockerRequest, LockerDTO } from "@alentapp/shared";
+import type { CreateLockerRequest, LockerDTO, LockerStatus, MemberDTO, UpdateLockerRequest } from "@alentapp/shared";
 import { lockersService } from "../services/lockers";
+import { membersService } from "../services/members";
 import {
   DialogRoot,
   DialogContent,
@@ -26,26 +27,62 @@ import {
   DialogCloseTrigger,
 } from "../components/ui/dialog";
 import { Field } from "../components/ui/field";
+import {
+  SelectRoot,
+  SelectTrigger,
+  SelectValueText,
+  SelectContent,
+  SelectItem,
+  createListCollection,
+} from "../components/ui/select";
 
-const initialFormData: CreateLockerRequest = {
+type LockerFormData = CreateLockerRequest & {
+  status: LockerStatus;
+  member_id: string;
+};
+
+const initialFormData: LockerFormData = {
   number: 1,
   location: "",
+  status: "Available",
+  member_id: "",
 };
+
+const statusCollection = createListCollection({
+  items: [
+    { label: "Disponible", value: "Available" },
+    { label: "Ocupado", value: "Occupied" },
+    { label: "Mantenimiento", value: "Maintenance" },
+  ],
+});
 
 export function LockersView() {
   const [lockers, setLockers] = useState<LockerDTO[]>([]);
+  const [members, setMembers] = useState<MemberDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<CreateLockerRequest>(initialFormData);
+  const [editingLockerId, setEditingLockerId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<LockerFormData>(initialFormData);
+
+  const memberCollection = createListCollection({
+    items: [
+      { label: "Sin socio asignado", value: "none" },
+      ...members.map((member) => ({ label: member.name, value: member.id })),
+    ],
+  });
 
   const fetchLockers = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await lockersService.getAll();
-      setLockers(data);
+      const [lockersData, membersData] = await Promise.all([
+        lockersService.getAll(),
+        membersService.getAll(),
+      ]);
+      setLockers(lockersData);
+      setMembers(membersData);
     } catch (err: any) {
       setError(err.message || "Error al cargar los casilleros");
     } finally {
@@ -54,7 +91,19 @@ export function LockersView() {
   };
 
   const openCreateModal = () => {
+    setEditingLockerId(null);
     setFormData(initialFormData);
+    setIsDialogOpen(true);
+  };
+
+  const openEditModal = (locker: LockerDTO) => {
+    setEditingLockerId(locker.id);
+    setFormData({
+      number: locker.number,
+      location: locker.location,
+      status: locker.status,
+      member_id: locker.member_id ?? "",
+    });
     setIsDialogOpen(true);
   };
 
@@ -62,16 +111,46 @@ export function LockersView() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await lockersService.create(formData);
+      if (editingLockerId) {
+        const updateData: UpdateLockerRequest = {
+          number: formData.number,
+          location: formData.location,
+          status: formData.status,
+          member_id: formData.member_id || null,
+        };
+        await lockersService.update(editingLockerId, updateData);
+      } else {
+        await lockersService.create({
+          number: formData.number,
+          location: formData.location,
+        });
+      }
       setFormData(initialFormData);
       setIsDialogOpen(false);
-      alert("Casillero creado correctamente");
       fetchLockers();
     } catch (err: any) {
-      alert(err.message || "Error al crear el casillero");
+      alert(err.message || "Error al guardar el casillero");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const getMemberName = (memberId?: string | null) => {
+    if (!memberId) {
+      return "-";
+    }
+
+    return members.find((member) => member.id === memberId)?.name ?? memberId;
+  };
+
+  const getStatusBadgeColors = (status: LockerStatus) => {
+    if (status === "Available") {
+      return { bg: "green.50", color: "green.700" };
+    }
+    if (status === "Maintenance") {
+      return { bg: "red.50", color: "red.700" };
+    }
+    return { bg: "orange.50", color: "orange.700" };
   };
 
   useEffect(() => {
@@ -101,7 +180,7 @@ export function LockersView() {
         <DialogContent>
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>Agregar Nuevo Casillero</DialogTitle>
+              <DialogTitle>{editingLockerId ? "Editar Casillero" : "Agregar Nuevo Casillero"}</DialogTitle>
             </DialogHeader>
             <DialogBody>
               <Stack gap="4">
@@ -123,6 +202,53 @@ export function LockersView() {
                     required
                   />
                 </Field>
+                {editingLockerId && (
+                  <>
+                    <Field label="Estado" required>
+                      <SelectRoot
+                        collection={statusCollection}
+                        value={[formData.status]}
+                        onValueChange={(e) =>
+                          setFormData({ ...formData, status: e.value[0] as LockerStatus })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValueText placeholder="Seleccione un estado" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statusCollection.items.map((item) => (
+                            <SelectItem item={item} key={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </SelectRoot>
+                    </Field>
+                    <Field label="Socio asignado">
+                      <SelectRoot
+                        collection={memberCollection}
+                        value={[formData.member_id || "none"]}
+                        onValueChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            member_id: e.value[0] === "none" ? "" : e.value[0],
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValueText placeholder="Seleccione un socio" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {memberCollection.items.map((item) => (
+                            <SelectItem item={item} key={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </SelectRoot>
+                    </Field>
+                  </>
+                )}
               </Stack>
             </DialogBody>
             <DialogFooter>
@@ -130,7 +256,7 @@ export function LockersView() {
                 <Button variant="outline">Cancelar</Button>
               </DialogActionTrigger>
               <Button type="submit" colorPalette="blue" loading={isSubmitting}>
-                Crear Casillero
+                {editingLockerId ? "Guardar Cambios" : "Crear Casillero"}
               </Button>
             </DialogFooter>
             <DialogCloseTrigger />
@@ -175,32 +301,48 @@ export function LockersView() {
                   <Table.ColumnHeader py="4">Ubicación</Table.ColumnHeader>
                   <Table.ColumnHeader py="4">Estado</Table.ColumnHeader>
                   <Table.ColumnHeader py="4">Socio Asignado</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4" textAlign="end">Acciones</Table.ColumnHeader>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                {lockers.map((locker) => (
-                  <Table.Row key={locker.id} _hover={{ bg: "bg.muted/30" }}>
-                    <Table.Cell fontWeight="semibold" color="fg.emphasized">
-                      {locker.number}
-                    </Table.Cell>
-                    <Table.Cell color="fg.muted">{locker.location}</Table.Cell>
-                    <Table.Cell>
-                      <Box
-                        display="inline-block"
-                        px="2"
-                        py="0.5"
-                        borderRadius="md"
-                        bg={locker.status === "Available" ? "green.50" : "orange.50"}
-                        color={locker.status === "Available" ? "green.700" : "orange.700"}
-                        fontSize="xs"
-                        fontWeight="bold"
-                      >
-                        {locker.status}
-                      </Box>
-                    </Table.Cell>
-                    <Table.Cell color="fg.muted">{locker.member_id || "-"}</Table.Cell>
-                  </Table.Row>
-                ))}
+                {lockers.map((locker) => {
+                  const badgeColors = getStatusBadgeColors(locker.status);
+
+                  return (
+                    <Table.Row key={locker.id} _hover={{ bg: "bg.muted/30" }}>
+                      <Table.Cell fontWeight="semibold" color="fg.emphasized">
+                        {locker.number}
+                      </Table.Cell>
+                      <Table.Cell color="fg.muted">{locker.location}</Table.Cell>
+                      <Table.Cell>
+                        <Box
+                          display="inline-block"
+                          px="2"
+                          py="0.5"
+                          borderRadius="md"
+                          bg={badgeColors.bg}
+                          color={badgeColors.color}
+                          fontSize="xs"
+                          fontWeight="bold"
+                        >
+                          {locker.status}
+                        </Box>
+                      </Table.Cell>
+                      <Table.Cell color="fg.muted">{getMemberName(locker.member_id)}</Table.Cell>
+                      <Table.Cell textAlign="end">
+                        <HStack gap="2" justify="flex-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEditModal(locker)}
+                          >
+                            <LuPencil /> Editar
+                          </Button>
+                        </HStack>
+                      </Table.Cell>
+                    </Table.Row>
+                  );
+                })}
               </Table.Body>
             </Table.Root>
           )}
