@@ -44,6 +44,7 @@ model Member {
     medical_certificates MedicalCertificate[]
     disciplines         Discipline[]
     payments            Payment[]
+    lockers             Locker[]
     @@map("members") // Para que en la DB la tabla se llame 'members' en minúscula
 }
 
@@ -107,6 +108,12 @@ enum EquipmentLoanStatus {
     Damaged
 }
 
+enum LockerStatus {
+    Available
+    Occupied
+    Maintenance
+}
+
 model EquipmentLoan {
     id             String     @id @default(uuid())
     item_name      String
@@ -117,4 +124,16 @@ model EquipmentLoan {
     member         Member     @relation(fields: [member_id], references: [id])
 
     @@map("equipment_loans")
+}
+
+model Locker {
+    id        String       @id @default(uuid())
+    number    Int          @unique
+    location  String
+    status    LockerStatus @default(Available)
+    member_id String?
+    member    Member?      @relation(fields: [member_id], references: [id])
+
+    @@index([number])
+    @@map("lockers")
 }
