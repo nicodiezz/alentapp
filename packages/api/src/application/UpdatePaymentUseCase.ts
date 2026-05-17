@@ -13,13 +13,13 @@ export class UpdatePaymentUseCase {
     async execute(id: string, data: UpdatePaymentRequest): Promise<PaymentDTO> {
         const existingPayment = await this.paymentRepo.findById(id);
         if (!existingPayment) {
-            throw new Error('El pago no existe');
+            throw new Error('El pago No existe');
         }
 
         if (data.member_id) {
             const existingMember = await this.memberRepo.findById(data.member_id);
             if (!existingMember) {
-                throw new Error('El miembro no existe');
+                throw new Error('El miembro No existe');
             }
         }
 

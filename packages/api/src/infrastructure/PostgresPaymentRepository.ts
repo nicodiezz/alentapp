@@ -58,7 +58,9 @@ export class PostgresPaymentRepository implements PaymentRepository {
                 amount: payment.amount,
                 month: payment.month,
                 year: payment.year,
-                payment_date: payment.payment_date ? new Date(payment.payment_date) : null,
+                payment_date: payment.payment_date !== undefined
+                    ? (payment.payment_date ? new Date(payment.payment_date) : null)
+                    : undefined,
                 status: payment.status,
                 due_date: payment.due_date ? new Date(payment.due_date) : undefined,
             },

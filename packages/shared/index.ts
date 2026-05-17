@@ -68,7 +68,7 @@ export interface UpdatePaymentRequest {
   year?: number;
   status?: CreatePaymentStatus;
   due_date?: string;
-  payment_date?: string;
+  payment_date?: string | null;
 }
 
 
