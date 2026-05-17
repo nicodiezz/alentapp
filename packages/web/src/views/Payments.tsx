@@ -19,7 +19,7 @@ import type {
     PaymentDTO,
     CreatePaymentRequest,
     CreatePaymentStatus,
-    UpdatePaymentRequest,
+    UpdatePaymentRequest
 } from '@alentapp/shared';
 import {
     DialogRoot,
@@ -41,7 +41,7 @@ import {
     createListCollection,
 } from '../components/ui/select';
 import { membersService } from '../services/members';
-
+import { toaster } from '../components/ui/toaster';
 
 export function PaymentsView() {
     const [payments, setPayments] = useState<PaymentDTO[]>([]);
@@ -136,6 +136,26 @@ export function PaymentsView() {
             status: payment.status as CreatePaymentStatus,
         });
         setIsDialogOpen(true);
+    };
+
+    const handleCancelPayment = (payment: PaymentDTO) => {
+        toaster.create({
+            title: '¿Confirmar cancelación?',
+            description: '¿Estás seguro de que deseas cancelar este pago?',
+            type: 'warning',
+            action: {
+                label: 'Sí, cancelar',
+                onClick: async () => {
+                    try {
+                        await paymentsService.cancel(payment.id);
+                        toaster.create({ title: 'Pago cancelado exitosamente', type: 'success' });
+                        fetchPayments();
+                    } catch (err: any) {
+                        toaster.create({ title: 'Error', description: err.message, type: 'error' });
+                    }
+                },
+            },
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -374,7 +394,7 @@ export function PaymentsView() {
                                     <Table.ColumnHeader py="4">Fecha de vencimiento</Table.ColumnHeader>
                                     <Table.ColumnHeader py="4">Fecha de pago</Table.ColumnHeader>
                                     <Table.ColumnHeader py="4">Estado</Table.ColumnHeader>
-                                    <Table.ColumnHeader py="4" textAlign="end">Acciones</Table.ColumnHeader>
+                                    <Table.ColumnHeader py="4" textAlign="center">Acciones</Table.ColumnHeader>
                                 </Table.Row>
                             </Table.Header>
                             <Table.Body>
@@ -392,23 +412,35 @@ export function PaymentsView() {
                                                 px="2"
                                                 py="0.5"
                                                 borderRadius="md"
-                                                bg={payment.status === 'Paid' ? 'green.50' : 'orange.50'}
-                                                color={payment.status === 'Paid' ? 'green.700' : 'orange.700'}
+                                                bg={payment.status === 'Paid' ? 'green.50' : payment.status === 'Canceled' ? 'red.50' : 'orange.50'}
+                                                color={payment.status === 'Paid' ? 'green.700' : payment.status === 'Canceled' ? 'red.700' : 'orange.700'}
                                                 fontSize="xs"
                                                 fontWeight="bold"
                                             >
-                                                {statusMap.get(payment.status) ?? payment.status}
+                                                {statusMap.get(payment.status) ?? (payment.status === 'Canceled' ? 'Cancelado' : payment.status)}
                                             </Box>
                                         </Table.Cell>
                                         <Table.Cell textAlign="end">
-                                            <IconButton
-                                                variant="ghost"
-                                                size="sm"
-                                                aria-label="Editar pago"
-                                                onClick={() => openEditModal(payment)}
-                                            >
-                                                <LuPencil />
-                                            </IconButton>
+                                            <HStack gap="2" justify="flex-end">
+                                                <IconButton
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    aria-label="Editar pago"
+                                                    onClick={() => openEditModal(payment)}
+                                                >
+                                                    <LuPencil />
+                                                </IconButton>
+                                                {payment.status !== 'Canceled' && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        colorPalette="red"
+                                                        onClick={() => handleCancelPayment(payment)}
+                                                    >
+                                                        Cancelar
+                                                    </Button>
+                                                )}
+                                            </HStack>
                                         </Table.Cell>
                                     </Table.Row>
                                 ))}
