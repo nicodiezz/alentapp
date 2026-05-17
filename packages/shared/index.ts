@@ -152,3 +152,11 @@ export interface EquipmentLoanDTO {
   due_date: string; // ISO Date String (YYYY-MM-DD)
   member_id: string;
 }
+
+
+export interface CreateEquipmentLoanRequest {
+  item_name: string;
+  loan_date: string; // ISO Date String (YYYY-MM-DD)
+  due_date: string; // ISO Date String (YYYY-MM-DD)
+  member_id: string;
+}
