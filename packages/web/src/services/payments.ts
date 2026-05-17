@@ -1,6 +1,6 @@
 import type {
   PaymentDTO,
-  CreatePaymentRequest
+  CreatePaymentRequest, UpdatePaymentRequest
 } from '@alentapp/shared';
 
 const API_URL =
@@ -79,5 +79,56 @@ export const paymentsService = {
         ),
       })
     );
-  }
+  },
+
+  async findById(id: string): Promise<PaymentDTO> {
+    const response = await fetch(`${API_URL}/payments/${id}`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al obtener el pago');
+    }
+
+    const result = await response.json();
+
+    return {
+      ...result.data,
+      due_date: formatDate(result.data.due_date),
+      payment_date: formatDate(result.data.payment_date),
+    };
+  },
+
+  async update(id: string, data: UpdatePaymentRequest): Promise<PaymentDTO> {
+    const response = await fetch(`${API_URL}/payments/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al actualizar el pago');
+    }
+
+    const result = await response.json();
+
+    return {
+      ...result.data,
+      due_date: formatDate(result.data.due_date),
+      payment_date: formatDate(result.data.payment_date),
+    };
+  },
+
+  async cancel(id: string): Promise<void> {
+    const response = await fetch(`${API_URL}/payments/${id}`, {
+      method: 'PATCH',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al cancelar el pago');
+    }
+  },
 };
