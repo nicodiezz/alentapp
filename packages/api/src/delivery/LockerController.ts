@@ -1,12 +1,14 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { CreateLockerRequest } from '@alentapp/shared';
+import { CreateLockerRequest, UpdateLockerRequest } from '@alentapp/shared';
 import { CreateLockerUseCase } from '../application/NewLockerUseCase.js';
 import { GetLockersUseCase } from '../application/GetLockersUseCase.js';
+import { UpdateLockerUseCase } from '../application/UpdateLockerUseCase.js';
 
 export class LockerController {
     constructor(
         private readonly createLockerUseCase: CreateLockerUseCase,
         private readonly getLockersUseCase: GetLockersUseCase,
+        private readonly updateLockerUseCase: UpdateLockerUseCase,
     ) {}
 
     async getAll(_request: FastifyRequest, reply: FastifyReply) {
@@ -26,16 +28,47 @@ export class LockerController {
             const locker = await this.createLockerUseCase.execute(request.body);
             return reply.status(201).send({ data: locker });
         } catch (error: any) {
-            if (error.message.includes('Ya existe un casillero con ese número')) {
+            if (error.message.includes('Ya existe un casillero')) {
                 return reply.status(409).send({ error: error.message });
             }
             if (
                 error.message.includes('requerido') ||
-                error.message.includes('debe ser numérico')
+                error.message.includes('debe ser')
             ) {
                 return reply.status(400).send({ error: error.message });
             }
-            return reply.status(500).send({ error: 'Error interno, reintente más tarde' });
+            return reply.status(500).send({ error: 'Error interno, reintente mas tarde' });
+        }
+    }
+
+    async update(
+        request: FastifyRequest<{ Params: { id: string }; Body: UpdateLockerRequest }>,
+        reply: FastifyReply,
+    ) {
+        try {
+            const { id } = request.params;
+            const locker = await this.updateLockerUseCase.execute(id, request.body);
+            return reply.status(200).send({ data: locker });
+        } catch (error: any) {
+            if (
+                error.message.includes('El casillero no existe') ||
+                error.message.includes('El miembro indicado no existe')
+            ) {
+                return reply.status(404).send({ error: error.message });
+            }
+            if (
+                error.message.includes('Ya existe un casillero') ||
+                error.message.includes('No se puede asignar un casillero en mantenimiento')
+            ) {
+                return reply.status(409).send({ error: error.message });
+            }
+            if (
+                error.message.includes('requerida') ||
+                error.message.includes('debe ser')
+            ) {
+                return reply.status(400).send({ error: error.message });
+            }
+            return reply.status(500).send({ error: 'Error interno, reintente mas tarde' });
         }
     }
 }

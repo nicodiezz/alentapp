@@ -1,4 +1,4 @@
-import { CreateLockerRequest } from '@alentapp/shared';
+import { CreateLockerRequest, UpdateLockerRequest } from '@alentapp/shared';
 import { LockerRepository } from '../LockerRepository.js';
 
 export class LockerValidator {
@@ -8,6 +8,17 @@ export class LockerValidator {
         this.validateRequiredFields(data);
         this.validateNumber(data.number);
         await this.validateNumberIsUnique(data.number);
+    }
+
+    async validateUpdate(id: string, data: UpdateLockerRequest): Promise<void> {
+        if (data.number !== undefined) {
+            this.validateNumber(data.number);
+            await this.validateNumberIsUnique(data.number, id);
+        }
+
+        if (data.location !== undefined && data.location.trim() === '') {
+            throw new Error('La ubicaciÃ³n es requerida');
+        }
     }
 
     private validateRequiredFields(data: CreateLockerRequest): void {
@@ -26,9 +37,9 @@ export class LockerValidator {
         }
     }
 
-    private async validateNumberIsUnique(number: number): Promise<void> {
+    private async validateNumberIsUnique(number: number, currentLockerId?: string): Promise<void> {
         const lockerWithSameNumber = await this.lockerRepo.findByNumber(number);
-        if (lockerWithSameNumber) {
+        if (lockerWithSameNumber && lockerWithSameNumber.id !== currentLockerId) {
             throw new Error('Ya existe un casillero con ese número');
         }
     }
