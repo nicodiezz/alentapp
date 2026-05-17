@@ -5,4 +5,5 @@ export interface PaymentRepository {
   findAll(): Promise<PaymentDTO[]>;
   findById(id: string): Promise<PaymentDTO | null>;
   update(id: string, data: UpdatePaymentRequest): Promise<PaymentDTO>;
+  cancel(id: string): Promise<PaymentDTO>;
 }
