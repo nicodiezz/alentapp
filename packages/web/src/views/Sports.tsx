@@ -11,8 +11,9 @@ import {
   Table,
   Text,
   Textarea,
+  IconButton,
 } from "@chakra-ui/react";
-import { LuPlus, LuRefreshCw } from "react-icons/lu";
+import { LuPencil, LuPlus, LuRefreshCw, LuTrash2 } from "react-icons/lu";
 import { useEffect, useState } from "react";
 import type { CreateSportRequest, SportDTO } from "@alentapp/shared";
 import { sportsService } from "../services/sports";
@@ -57,6 +58,7 @@ export function SportsView() {
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingSportId, setEditingSportId] = useState<string | null>(null);
   const [formData, setFormData] = useState<CreateSportRequest>(initialFormData);
 
   const fetchSports = async () => {
@@ -73,7 +75,20 @@ export function SportsView() {
   };
 
   const openCreateModal = () => {
+    setEditingSportId(null);
     setFormData(initialFormData);
+    setIsDialogOpen(true);
+  };
+
+  const openEditModal = (sport: SportDTO) => {
+    setEditingSportId(sport.id);
+    setFormData({
+      name: sport.name,
+      description: sport.description,
+      max_capacity: sport.max_capacity,
+      additional_price: sport.additional_price,
+      requires_medical_certificate: sport.requires_medical_certificate,
+    });
     setIsDialogOpen(true);
   };
 
@@ -81,13 +96,31 @@ export function SportsView() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await sportsService.create(formData);
+      if (editingSportId) {
+        await sportsService.update(editingSportId, {
+          description: formData.description,
+          max_capacity: formData.max_capacity,
+        });
+      } else {
+        await sportsService.create(formData);
+      }
       setIsDialogOpen(false);
       fetchSports();
     } catch (err: any) {
       alert(err.message || "Error al guardar el deporte");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSport = async (id: string, name: string) => {
+    if (window.confirm(`¿Estás seguro de que deseas eliminar el deporte "${name}"? Esta acción no se puede deshacer.`)) {
+      try {
+        await sportsService.delete(id);
+        fetchSports();
+      } catch (err: any) {
+        alert(err.message || "Error al eliminar el deporte");
+      }
     }
   };
 
@@ -118,7 +151,7 @@ export function SportsView() {
         <DialogContent>
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>Agregar Nuevo Deporte</DialogTitle>
+              <DialogTitle>{editingSportId ? "Editar Deporte" : "Agregar Nuevo Deporte"}</DialogTitle>
             </DialogHeader>
             <DialogBody>
               <Stack gap="4">
@@ -127,6 +160,7 @@ export function SportsView() {
                     placeholder="Ej. Natación"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    disabled={!!editingSportId}
                     required
                   />
                 </Field>
@@ -148,39 +182,43 @@ export function SportsView() {
                     required
                   />
                 </Field>
-                <Field label="Precio Adicional" required>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.additional_price}
-                    onChange={(e) => setFormData({ ...formData, additional_price: Number(e.target.value) })}
-                    required
-                  />
-                </Field>
-                <Field label="Requiere Certificado Médico" required>
-                  <SelectRoot
-                    collection={medicalCertificateOptions}
-                    value={[String(formData.requires_medical_certificate)]}
-                    onValueChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        requires_medical_certificate: e.value[0] === "true",
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValueText placeholder="Seleccione una opción" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {medicalCertificateOptions.items.map((option) => (
-                        <SelectItem item={option} key={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </SelectRoot>
-                </Field>
+                {!editingSportId && (
+                  <>
+                    <Field label="Precio Adicional" required>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.additional_price}
+                        onChange={(e) => setFormData({ ...formData, additional_price: Number(e.target.value) })}
+                        required
+                      />
+                    </Field>
+                    <Field label="Requiere Certificado Médico" required>
+                      <SelectRoot
+                        collection={medicalCertificateOptions}
+                        value={[String(formData.requires_medical_certificate)]}
+                        onValueChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            requires_medical_certificate: e.value[0] === "true",
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValueText placeholder="Seleccione una opción" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {medicalCertificateOptions.items.map((option) => (
+                            <SelectItem item={option} key={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </SelectRoot>
+                    </Field>
+                  </>
+                )}
               </Stack>
             </DialogBody>
             <DialogFooter>
@@ -188,7 +226,7 @@ export function SportsView() {
                 <Button variant="outline">Cancelar</Button>
               </DialogActionTrigger>
               <Button type="submit" colorPalette="blue" loading={isSubmitting}>
-                Crear Deporte
+                {editingSportId ? "Guardar Cambios" : "Crear Deporte"}
               </Button>
             </DialogFooter>
             <DialogCloseTrigger />
@@ -234,6 +272,7 @@ export function SportsView() {
                   <Table.ColumnHeader py="4">Capacidad</Table.ColumnHeader>
                   <Table.ColumnHeader py="4">Precio Adicional</Table.ColumnHeader>
                   <Table.ColumnHeader py="4">Certificado Médico</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4" textAlign="end">Acciones</Table.ColumnHeader>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
@@ -258,6 +297,27 @@ export function SportsView() {
                       >
                         {sport.requires_medical_certificate ? "Sí" : "No"}
                       </Box>
+                    </Table.Cell>
+                    <Table.Cell textAlign="end">
+                      <HStack gap="2" justify="flex-end">
+                        <IconButton
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Editar deporte"
+                          onClick={() => openEditModal(sport)}
+                        >
+                          <LuPencil />
+                        </IconButton>
+                        <IconButton
+                          variant="ghost"
+                          size="sm"
+                          colorPalette="red"
+                          aria-label="Eliminar deporte"
+                          onClick={() => handleDeleteSport(sport.id, sport.name)}
+                        >
+                          <LuTrash2 />
+                        </IconButton>
+                      </HStack>
                     </Table.Cell>
                   </Table.Row>
                 ))}

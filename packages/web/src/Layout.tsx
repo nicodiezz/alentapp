@@ -33,11 +33,23 @@ function Layout() {
                                 Miembros
                             </Text>
                         </RouterLink>
-                        <RouterLink to="/sports">
+                        <RouterLink to="/payments">
                             <Text
-                                fontWeight="semibold"
-                                fontSize="sm"
-                                textTransform="uppercase"
+                                fontWeight="semibold" 
+                                fontSize="sm" 
+                                textTransform="uppercase" 
+                                letterSpacing="wider"
+                                color="fg.muted"
+                                _hover={{ color: "blue.500", textDecoration: "none" }}
+                            >
+                                Pagos
+                            </Text>
+                        </RouterLink>
+                         <RouterLink to="/sports">
+                            <Text 
+                                fontWeight="semibold" 
+                                fontSize="sm" 
+                                textTransform="uppercase" 
                                 letterSpacing="wider"
                                 color="fg.muted"
                                 _hover={{ color: "blue.500", textDecoration: "none" }}
@@ -45,11 +57,12 @@ function Layout() {
                                 Deportes
                             </Text>
                         </RouterLink>
-                        <RouterLink to="/disciplines">
-                            <Text
-                                fontWeight="semibold"
-                                fontSize="sm"
-                                textTransform="uppercase"
+                          
+                         <RouterLink to="/disciplines">
+                            <Text 
+                                fontWeight="semibold" 
+                                fontSize="sm" 
+                                textTransform="uppercase" 
                                 letterSpacing="wider"
                                 color="fg.muted"
                                 _hover={{ color: "blue.500", textDecoration: "none" }}
@@ -57,6 +70,20 @@ function Layout() {
                                 Suspensiones
                             </Text>
                         </RouterLink>
+                        
+                         <RouterLink to="/medical-certificates">
+                            <Text 
+                                fontWeight="semibold" 
+                                fontSize="sm" 
+                                textTransform="uppercase" 
+                                letterSpacing="wider"
+                                color="fg.muted"
+                                _hover={{ color: "blue.500", textDecoration: "none" }}
+                            >
+                                Certificados Médicos
+                            </Text>
+                        </RouterLink>
+                      
                     </HStack>
                 </Flex>
             </Box>

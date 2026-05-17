@@ -49,7 +49,7 @@ Se utilizará el paquete compartido para definir el cuerpo de la petición. Todo
 ### Componentes de Arquitectura Hexagonal
 
 1. Puerto: `DisciplineRepository` (Método `update(id, data)`).
-2. Servicio de Dominio: `DisciplineValidator` (Encargado de reutilizar validaciones de las fechas y existencia del miembro).
+2. Servicio de Dominio: `DisciplineValidator` (Encargado de reutilizar validaciones de las fechas).
 3. Caso de Uso: `UpdateDisciplineUseCase` (Orquesta la validación y llama al repositorio).
 4. Adaptador de Salida: `PostgresDisciplineRepository` (Actualización usando el método `update` de Prisma).
 5. Adaptador de Entrada: `DisciplineController` (Ruta HTTP que extrae el `id` de la URL y mapea excepciones a códigos HTTP).
@@ -58,6 +58,7 @@ Se utilizará el paquete compartido para definir el cuerpo de la petición. Todo
 | Escenario                  | Resultado Esperado                            | Código HTTP actual        |
 | -------------------------- | --------------------------------------------- | ------------------------- |
 | Suspensión inexistente          | Mensaje: "La suspensión no existe"               | 404 Not Found           |
+| `member_id` inexistente         | Mensaje: "El miembro indicado no existe"          | 404 Not Found           |
 | `expiry_date` anterior a `issue_date` | Mensaje: "La fecha de fin de suspensión no puede ser previa a la fecha de inicio"| 400 Bad Request           |
 | Fecha con formato inválido | Mensaje: "Formato de fecha inválido"| 400 Bad Request        |
 | Error de conexión a DB     | Mensaje: "Error interno, reintente más tarde" | 500 Internal Server Error |

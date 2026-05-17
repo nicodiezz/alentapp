@@ -28,7 +28,7 @@ export class SportValidator {
         }
     }
 
-    private validateMaxCapacity(maxCapacity: number): void {
+    validateMaxCapacity(maxCapacity: number): void {
         if (!Number.isInteger(maxCapacity) || maxCapacity <= 0) {
             throw new Error('La capacidad máxima debe ser mayor a cero');
         }

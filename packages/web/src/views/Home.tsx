@@ -1,14 +1,14 @@
 import { Box, SimpleGrid, Heading, Text, VStack } from "@chakra-ui/react";
-import { LuUsers, LuShieldAlert, LuDumbbell } from "react-icons/lu";
+import { LuUsers, LuDollarSign, LuShieldAlert, LuDumbbell, LuFileBadge } from "react-icons/lu";
 import { SectionCard } from "../components/SectionCard";
 
 export function HomeView() {
   return (
     <Box>
       <VStack gap="6" align="flex-start" mb="12">
-        <Heading 
-          size="4xl" 
-          fontWeight="extrabold" 
+        <Heading
+          size="4xl"
+          fontWeight="extrabold"
           letterSpacing="tight"
           bgGradient="to-r"
           gradientFrom="blue.600"
@@ -18,17 +18,23 @@ export function HomeView() {
           Bienvenido a Alentapp
         </Heading>
         <Text fontSize="xl" color="fg.muted" maxW="2xl">
-          El panel de administración central para gestionar todos los aspectos de tu club. 
+          El panel de administración central para gestionar todos los aspectos de tu club.
           Selecciona una sección a continuación para comenzar.
         </Text>
       </VStack>
 
       <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap="8">
-        <SectionCard 
+        <SectionCard
           title="Miembros"
           description="Administra el padrón de socios, sus categorías, estados de cuenta y datos personales."
           to="/members"
           icon={LuUsers}
+        />
+        <SectionCard
+          title="Pagos"
+          description="Administra los pagos de los socios, sus importes, fechas y estados."
+          to="/payments"
+          icon={LuDollarSign}
         />
 
         <SectionCard
@@ -45,13 +51,19 @@ export function HomeView() {
           icon={LuShieldAlert}
         />
     
-
+        <SectionCard 
+          title="Certificados Médicos"
+          description="Gestiona los certificados medicos de los socios para habilitar su actividad fisica en el club."
+          to="/medical-certificates"
+          icon={LuFileBadge}
+        />
+        
         {/* Future sections can be added here following the same pattern */}
-        <Box 
-          p="6" 
-          bg="bg.muted/30" 
-          borderRadius="2xl" 
-          borderWidth="1px" 
+        <Box
+          p="6"
+          bg="bg.muted/30"
+          borderRadius="2xl"
+          borderWidth="1px"
           borderColor="border.subtle"
           borderStyle="dashed"
           display="flex"
