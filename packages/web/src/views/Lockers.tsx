@@ -36,7 +36,6 @@ export function LockersView() {
   const [lockers, setLockers] = useState<LockerDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<CreateLockerRequest>(initialFormData);
@@ -56,7 +55,6 @@ export function LockersView() {
 
   const openCreateModal = () => {
     setFormData(initialFormData);
-    setSuccessMessage(null);
     setIsDialogOpen(true);
   };
 
@@ -67,7 +65,7 @@ export function LockersView() {
       await lockersService.create(formData);
       setFormData(initialFormData);
       setIsDialogOpen(false);
-      setSuccessMessage("Casillero creado correctamente");
+      alert("Casillero creado correctamente");
       fetchLockers();
     } catch (err: any) {
       alert(err.message || "Error al crear el casillero");
@@ -138,13 +136,6 @@ export function LockersView() {
             <DialogCloseTrigger />
           </form>
         </DialogContent>
-
-        {successMessage && (
-          <Box p="4" bg="green.50" color="green.700" borderRadius="md" border="1px solid" borderColor="green.200">
-            <Text fontWeight="bold">Éxito:</Text>
-            <Text>{successMessage}</Text>
-          </Box>
-        )}
 
         {error && (
           <Box p="4" bg="red.50" color="red.700" borderRadius="md" border="1px solid" borderColor="red.200">

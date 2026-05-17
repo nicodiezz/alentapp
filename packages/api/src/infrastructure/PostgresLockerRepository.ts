@@ -1,6 +1,5 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/client/client.js';
-import { randomUUID } from 'crypto';
 import { LockerRepository } from '../domain/LockerRepository.js';
 import { CreateLockerRequest, LockerDTO, LockerStatus } from '@alentapp/shared';
 
@@ -22,34 +21,30 @@ type DBLocker = {
 
 export class PostgresLockerRepository implements LockerRepository {
     async create(data: CreateLockerRequest): Promise<LockerDTO> {
-        const [locker] = await prisma.$queryRaw<DBLocker[]>`
-            INSERT INTO "lockers" ("id", "number", "location", "status")
-            VALUES (${randomUUID()}, ${data.number}, ${data.location}, 'Available'::"LockerStatus")
-            RETURNING "id", "number", "location", "status", "member_id"
-        `;
+        const locker = await prisma.locker.create({
+            data: {
+                number: data.number,
+                location: data.location,
+            },
+        });
 
         return this.mapToDTO(locker);
     }
 
     async findByNumber(number: number): Promise<LockerDTO | null> {
-        const [locker] = await prisma.$queryRaw<DBLocker[]>`
-            SELECT "id", "number", "location", "status", "member_id"
-            FROM "lockers"
-            WHERE "number" = ${number}
-            LIMIT 1
-        `;
+        const locker = await prisma.locker.findUnique({
+            where: { number },
+        });
 
         return locker ? this.mapToDTO(locker) : null;
     }
 
     async findAll(): Promise<LockerDTO[]> {
-        const lockers = await prisma.$queryRaw<DBLocker[]>`
-            SELECT "id", "number", "location", "status", "member_id"
-            FROM "lockers"
-            ORDER BY "number" ASC
-        `;
+        const lockers = await prisma.locker.findMany({
+            orderBy: { number: 'asc' },
+        });
 
-        return lockers.map((locker: DBLocker) => this.mapToDTO(locker));
+        return lockers.map(this.mapToDTO);
     }
 
     private mapToDTO(locker: DBLocker): LockerDTO {

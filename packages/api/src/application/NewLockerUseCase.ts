@@ -11,11 +11,11 @@ export class CreateLockerUseCase {
     async execute(data: CreateLockerRequest): Promise<LockerDTO> {
         await this.lockerValidator.validate(data);
 
-        const nuevoCasillero = await this.lockerRepository.create({
+        const newLocker = await this.lockerRepository.create({
             number: data.number,
             location: data.location.trim(),
         });
 
-        return nuevoCasillero;
+        return newLocker;
     }
 }

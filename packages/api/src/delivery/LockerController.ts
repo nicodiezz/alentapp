@@ -11,8 +11,8 @@ export class LockerController {
 
     async getAll(_request: FastifyRequest, reply: FastifyReply) {
         try {
-            const casilleros = await this.getLockersUseCase.execute();
-            return reply.status(200).send({ data: casilleros });
+            const lockers = await this.getLockersUseCase.execute();
+            return reply.status(200).send({ data: lockers });
         } catch (error: any) {
             return reply.status(500).send({ error: error.message });
         }
@@ -23,8 +23,8 @@ export class LockerController {
         reply: FastifyReply,
     ) {
         try {
-            const casillero = await this.createLockerUseCase.execute(request.body);
-            return reply.status(201).send({ data: casillero });
+            const locker = await this.createLockerUseCase.execute(request.body);
+            return reply.status(201).send({ data: locker });
         } catch (error: any) {
             if (error.message.includes('Ya existe un casillero con ese número')) {
                 return reply.status(409).send({ error: error.message });
