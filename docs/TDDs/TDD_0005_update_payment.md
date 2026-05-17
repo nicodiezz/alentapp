@@ -78,8 +78,8 @@ Se utilizará el paquete compartido para definir el cuerpo de la petición. Todo
 | `status` con formato inválido           | El status debe ser "Pending" o "Paid"                                 | 400 Bad Request           |
 | `due_date` con formato inválido         | Fecha de vencimiento inválida                                         | 400 Bad Request           |
 | `payment_date` con formato inválido     | Fecha de pago inválida                                                | 400 Bad Request           |
-| `status = "Paid"` sin `payment_date`    | Mensaje: "La fecha de pago es obligatoria"   | 400 Bad Request           |
-| `status = "Pending"` con `payment_date` | Mensaje: "La fecha de pago debe ser null" | 400 Bad Request           |
+| `payment_date` con `status = "Pending"`| Mensaje: "El estado debe ser "Pagado" | 400 Bad Request           |
+| `status = "Paid"` sin `payment_date`    | Mensaje: "La fecha de pago es obligatoria si el estado es Pagado"                          | 400 Bad Request           |
 | Error de conexión a DB                  | Mensaje: "Error interno, reintente más tarde"                         | 500 Internal Server Error |
 
 
