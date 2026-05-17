@@ -162,7 +162,10 @@ export function MedicalCertificatesView() {
                             <Stack gap="4">
                                 <Field label="Miembro" required={!editingCertificateId}>
                                     {editingCertificateId ? (
-                                        <Text fontWeight="medium">{getMemberName(formData.member_id)}</Text>
+                                        <Input
+                                            value={getMemberName(formData.member_id)}
+                                            disabled
+                                        />
                                     ) : (
                                         <SelectRoot
                                             collection={membersCollection}
