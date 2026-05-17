@@ -137,26 +137,17 @@ export function PaymentsView() {
         });
         setIsDialogOpen(true);
     };
-
-    const handleCancelPayment = (payment: PaymentDTO) => {
-        toaster.create({
-            title: '¿Confirmar cancelación?',
-            description: '¿Estás seguro de que deseas cancelar este pago?',
-            type: 'warning',
-            action: {
-                label: 'Sí, cancelar',
-                onClick: async () => {
-                    try {
-                        await paymentsService.cancel(payment.id);
-                        toaster.create({ title: 'Pago cancelado exitosamente', type: 'success' });
-                        fetchPayments();
-                    } catch (err: any) {
-                        toaster.create({ title: 'Error', description: err.message, type: 'error' });
-                    }
-                },
-            },
-        });
-    };
+    
+    const handleCancelPayment = async (id: string) => {
+        if (window.confirm(`¿Estás seguro de que deseas cancelar este pago?`)) {
+          try {
+            await paymentsService.cancel(id);
+            fetchPayments();
+          } catch (err: any) {
+            alert(err.message || "Error al cancelar el pago");
+          }
+        }
+      };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -435,7 +426,7 @@ export function PaymentsView() {
                                                         variant="ghost"
                                                         size="sm"
                                                         colorPalette="red"
-                                                        onClick={() => handleCancelPayment(payment)}
+                                                        onClick={() => handleCancelPayment(payment.id)}
                                                     >
                                                         Cancelar
                                                     </Button>
