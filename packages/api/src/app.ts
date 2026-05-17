@@ -24,6 +24,7 @@ import { PostgresDisciplineRepository } from './infrastructure/PostgresDisciplin
 import { DisciplineValidator } from './domain/services/DisciplineValidator.js';
 import { CreateDisciplineUseCase } from './application/NewDisciplineUseCase.js';
 import { GetDisciplinesUseCase } from './application/GetDisciplinesUseCase.js';
+import { UpdateDisciplineUseCase } from './application/UpdateDisciplineUseCase.js';
 import { DisciplineController } from './delivery/DisciplineController.js';
 import { PostgresMedicalCertificateRepository } from './infrastructure/PostgresMedicalCertificateRepository.js';
 import { MedicalCertificateValidator } from './domain/services/MedicalCertificateValidator.js';
@@ -61,7 +62,7 @@ export function buildApp() {
     const createPaymentUseCase = new CreatePaymentUseCase(paymentRepo, paymentValidator, memberRepo);
     const getPaymentsUseCase = new GetPaymentsUseCase(paymentRepo);
     const disciplineRepo = new PostgresDisciplineRepository();
-    const disciplineValidator = new DisciplineValidator(memberRepo);
+    const disciplineValidator = new DisciplineValidator();
 
 
     const sportRepo = new PostgresSportRepository();
@@ -75,8 +76,9 @@ export function buildApp() {
     const getSportsUseCase = new GetSportsUseCase(sportRepo);
     const updateSportUseCase = new UpdateSportUseCase(sportRepo, sportValidator);
 
-    const createDisciplineUseCase = new CreateDisciplineUseCase(disciplineRepo, disciplineValidator);
+    const createDisciplineUseCase = new CreateDisciplineUseCase(disciplineRepo, disciplineValidator, memberRepo);
     const getDisciplinesUseCase = new GetDisciplinesUseCase(disciplineRepo);
+    const updateDisciplinesUseCase = new UpdateDisciplineUseCase(disciplineRepo, disciplineValidator, memberRepo);
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -94,6 +96,7 @@ export function buildApp() {
     const disciplineController = new DisciplineController(
         createDisciplineUseCase, 
         getDisciplinesUseCase,
+        updateDisciplinesUseCase,
     );
 
     const paymentController = new PaymentController(
@@ -129,6 +132,7 @@ export function buildApp() {
     server.put('/api/v1/sports/:id', sportController.update.bind(sportController));
     server.get('/api/v1/disciplines', disciplineController.getAll.bind(disciplineController));
     server.post('/api/v1/disciplines', disciplineController.create.bind(disciplineController));
+    server.put('/api/v1/disciplines/:id', disciplineController.update.bind(disciplineController));
   
   //rutas medical certificate
     server.post('/api/v1/medical-certificates', medicalCertificateController.create.bind(medicalCertificateController));

@@ -3,6 +3,7 @@ import {
   Button,
   Heading,
   HStack,
+  IconButton,
   Stack,
   Text,
   Box,
@@ -12,11 +13,11 @@ import {
   Input,
   Checkbox,
 } from "@chakra-ui/react";
-import { LuPlus, LuRefreshCw } from "react-icons/lu";
+import { LuPlus, LuPencil, LuRefreshCw } from "react-icons/lu";
 import { useEffect, useState } from "react";
 import { disciplinesService } from "../services/disciplines";
 import { membersService } from "../services/members";
-import type { DisciplineDTO, CreateDisciplineRequest, MemberDTO } from "@alentapp/shared";
+import type { DisciplineDTO, CreateDisciplineRequest, UpdateDisciplineRequest, MemberDTO } from "@alentapp/shared";
 import {
   DialogRoot,
   DialogContent,
@@ -45,6 +46,7 @@ export function DisciplinesView() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingDisciplineId, setEditingDisciplineId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<CreateDisciplineRequest>({
     reason: "",
@@ -76,6 +78,7 @@ export function DisciplinesView() {
   };
 
   const openCreateModal = () => {
+    setEditingDisciplineId(null);
     setFormData({
       reason: "",
       issue_date: "",
@@ -86,11 +89,27 @@ export function DisciplinesView() {
     setIsDialogOpen(true);
   };
 
+  const openEditModal = (discipline: DisciplineDTO) => {
+    setEditingDisciplineId(discipline.id);
+    setFormData({
+      reason: discipline.reason,
+      issue_date: discipline.issue_date,
+      expiry_date: discipline.expiry_date,
+      is_total_suspension: discipline.is_total_suspension,
+      member_id: discipline.member_id,
+    });
+    setIsDialogOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await disciplinesService.create(formData);
+      if (editingDisciplineId) {
+        await disciplinesService.update(editingDisciplineId, formData as UpdateDisciplineRequest);
+      } else {
+        await disciplinesService.create(formData);
+      }
       setIsDialogOpen(false);
       fetchData();
     } catch (err: any) {
@@ -131,7 +150,7 @@ export function DisciplinesView() {
         <DialogContent>
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>Nueva Sanción Disciplinaria</DialogTitle>
+              <DialogTitle>{editingDisciplineId ? "Editar Sanción Disciplinaria" : "Nueva Sanción Disciplinaria"}</DialogTitle>
             </DialogHeader>
             <DialogBody>
               <Stack gap="4">
@@ -194,7 +213,7 @@ export function DisciplinesView() {
                 <Button variant="outline">Cancelar</Button>
               </DialogActionTrigger>
               <Button type="submit" colorPalette="blue" loading={isSubmitting}>
-                Crear Sanción
+                {editingDisciplineId ? "Guardar Cambios" : "Crear Sanción"}
               </Button>
             </DialogFooter>
             <DialogCloseTrigger />
@@ -240,6 +259,8 @@ export function DisciplinesView() {
                   <Table.ColumnHeader py="4">Fecha inicio</Table.ColumnHeader>
                   <Table.ColumnHeader py="4">Fecha vencimiento</Table.ColumnHeader>
                   <Table.ColumnHeader py="4">Tipo</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4" textAlign="end">Acciones</Table.ColumnHeader>
+
                 </Table.Row>
               </Table.Header>
               <Table.Body>
@@ -264,6 +285,16 @@ export function DisciplinesView() {
                       >
                         {discipline.is_total_suspension ? "Total" : "Parcial"}
                       </Box>
+                    </Table.Cell>
+                    <Table.Cell textAlign="end">
+                      <IconButton
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Editar sanción"
+                        onClick={() => openEditModal(discipline)}
+                      >
+                        <LuPencil />
+                      </IconButton>
                     </Table.Cell>
                   </Table.Row>
                 ))}
