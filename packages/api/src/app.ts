@@ -19,6 +19,7 @@ import { SportValidator } from './domain/services/SportValidator.js';
 import { CreateSportUseCase } from './application/NewSportUseCase.js';
 import { GetSportsUseCase } from './application/GetSportsUseCase.js';
 import { UpdateSportUseCase } from './application/UpdateSportUseCase.js';
+import { DeleteSportUseCase } from './application/DeleteSportUseCase.js';
 import { SportController } from './delivery/SportController.js';
 import { PostgresDisciplineRepository } from './infrastructure/PostgresDisciplineRepository.js';
 import { DisciplineValidator } from './domain/services/DisciplineValidator.js';
@@ -76,6 +77,7 @@ export function buildApp() {
     const createSportUseCase = new CreateSportUseCase(sportRepo, sportValidator);
     const getSportsUseCase = new GetSportsUseCase(sportRepo);
     const updateSportUseCase = new UpdateSportUseCase(sportRepo, sportValidator);
+    const deleteSportUseCase = new DeleteSportUseCase(sportRepo);
 
     const createDisciplineUseCase = new CreateDisciplineUseCase(disciplineRepo, disciplineValidator, memberRepo);
     const getDisciplinesUseCase = new GetDisciplinesUseCase(disciplineRepo);
@@ -92,7 +94,8 @@ export function buildApp() {
     const sportController = new SportController(
         createSportUseCase, 
         getSportsUseCase,
-        updateSportUseCase
+        updateSportUseCase,
+        deleteSportUseCase
     );
 
     const disciplineController = new DisciplineController(
@@ -133,6 +136,7 @@ export function buildApp() {
     server.get('/api/v1/sports', sportController.getAll.bind(sportController));
     server.post('/api/v1/sports', sportController.create.bind(sportController));
     server.put('/api/v1/sports/:id', sportController.update.bind(sportController));
+    server.delete('/api/v1/sports/:id', sportController.delete.bind(sportController));
     server.get('/api/v1/disciplines', disciplineController.getAll.bind(disciplineController));
     server.post('/api/v1/disciplines', disciplineController.create.bind(disciplineController));
     server.put('/api/v1/disciplines/:id', disciplineController.update.bind(disciplineController));
