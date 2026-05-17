@@ -33,6 +33,24 @@ export interface UpdateMemberRequest {
 }
 
 // ==========================================
+// Locker
+// ==========================================
+export type LockerStatus = 'Available' | 'Occupied' | 'Maintenance';
+
+export interface LockerDTO {
+  id: string; // UUID
+  number: number;
+  location: string;
+  status: LockerStatus;
+  member_id?: string | null;
+}
+
+export interface CreateLockerRequest {
+  number: number;
+  location: string;
+}
+
+// ==========================================
 // Payment
 // ==========================================
 
@@ -149,7 +167,7 @@ export type EquipmentLoanStatus = 'Loaned' | 'Returned' | 'Damaged'
 export interface EquipmentLoanDTO {
   id: string; // UUID
   item_name: string;
-  status: EquipmentLoanDTO;
+  status: EquipmentLoanStatus;
   loan_date: string; // ISO Date String (YYYY-MM-DD)
   due_date: string; // ISO Date String (YYYY-MM-DD)
   member_id: string;
@@ -165,7 +183,7 @@ export interface CreateEquipmentLoanRequest {
 
 export interface UpdateEquipmentLoanRequest {
   item_name?: string;
-  status?: 'Loaned' | 'Returned' | 'Damaged';
+  status?: EquipmentLoanStatus;
   loan_date?: string; // ISO Date String (YYYY-MM-DD)
   due_date?: string; // ISO Date String (YYYY-MM-DD)
   member_id?: string;
