@@ -1,7 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/client/client.js';
 import { EquipmentLoanRepository } from '../domain/EquipmentLoanRepository.js';
-import { EquipmentLoanDTO, CreateEquipmentLoanRequest } from '@alentapp/shared';
+import { EquipmentLoanDTO, CreateEquipmentLoanRequest, UpdateEquipmentLoanRequest } from '@alentapp/shared';
 
 if (!process.env.DATABASE_URL) {
     throw new Error('DATABASE_URL environment variable is not set');
@@ -29,6 +29,29 @@ export class PostgresEquipmentLoanRepository implements EquipmentLoanRepository 
                 loan_date: new Date(data.loan_date),
                 due_date: new Date(data.due_date),
                 member_id: data.member_id,
+            },
+        });
+
+        return this.mapToDTO(equipmentLoan);
+    }
+
+    async findById(id: string): Promise<EquipmentLoanDTO | null> {
+        const equipmentLoan = await prisma.equipmentLoan.findUnique({
+            where: { id },
+        });
+
+        return equipmentLoan ? this.mapToDTO(equipmentLoan) : null;
+    }
+
+    async update(id: string, data: UpdateEquipmentLoanRequest): Promise<EquipmentLoanDTO> {
+        const equipmentLoan = await prisma.equipmentLoan.update({
+            where: { id },
+            data: {
+                ...(data.item_name !== undefined && { item_name: data.item_name }),
+                ...(data.status !== undefined && { status: data.status }),
+                ...(data.loan_date !== undefined && { loan_date: new Date(data.loan_date) }),
+                ...(data.due_date !== undefined && { due_date: new Date(data.due_date) }),
+                ...(data.member_id !== undefined && { member_id: data.member_id }),
             },
         });
 
