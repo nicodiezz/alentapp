@@ -242,7 +242,7 @@ export function LockersView() {
                           setFormData({
                             ...formData,
                             member_id: e.value[0] === "none" ? "" : e.value[0],
-                            status: e.value[0] === "none" ? formData.status : "Occupied",
+                            status: e.value[0] === "none" ? "Available" : "Occupied",
                           })
                         }
                       >
