@@ -73,6 +73,12 @@ export function LockersView() {
     ],
   });
 
+  const availableStatusCollection = createListCollection({
+    items: formData.member_id
+      ? statusCollection.items.filter((item) => item.value === "Occupied")
+      : statusCollection.items,
+  });
+
   const fetchLockers = async () => {
     setIsLoading(true);
     setError(null);
@@ -101,7 +107,7 @@ export function LockersView() {
     setFormData({
       number: locker.number,
       location: locker.location,
-      status: locker.status,
+      status: locker.member_id ? "Occupied" : locker.status,
       member_id: locker.member_id ?? "",
     });
     setIsDialogOpen(true);
@@ -166,6 +172,10 @@ export function LockersView() {
     return { bg: "orange.50", color: "orange.700" };
   };
 
+  const getStatusLabel = (status: LockerStatus) => {
+    return statusCollection.items.find((item) => item.value === status)?.label ?? status;
+  };
+
   useEffect(() => {
     fetchLockers();
   }, []);
@@ -219,7 +229,7 @@ export function LockersView() {
                   <>
                     <Field label="Estado" required>
                       <SelectRoot
-                        collection={statusCollection}
+                        collection={availableStatusCollection}
                         value={[formData.status]}
                         onValueChange={(e) =>
                           setFormData({ ...formData, status: e.value[0] as LockerStatus })
@@ -229,9 +239,9 @@ export function LockersView() {
                           <SelectValueText placeholder="Seleccione un estado" />
                         </SelectTrigger>
                         <SelectContent>
-                          {statusCollection.items.map((item) => (
+                          {availableStatusCollection.items.map((item) => (
                             <SelectItem item={item} key={item.value}>
-                              {item.value}
+                              {item.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -245,6 +255,7 @@ export function LockersView() {
                           setFormData({
                             ...formData,
                             member_id: e.value[0] === "none" ? "" : e.value[0],
+                            status: e.value[0] === "none" ? "Available" : "Occupied",
                           })
                         }
                       >
@@ -254,7 +265,7 @@ export function LockersView() {
                         <SelectContent>
                           {memberCollection.items.map((item) => (
                             <SelectItem item={item} key={item.value}>
-                              {item.value}
+                              {item.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -338,7 +349,7 @@ export function LockersView() {
                           fontSize="xs"
                           fontWeight="bold"
                         >
-                          {locker.status}
+                          {getStatusLabel(locker.status)}
                         </Box>
                       </Table.Cell>
                       <Table.Cell color="fg.muted">{getMemberName(locker.member_id)}</Table.Cell>
@@ -369,6 +380,6 @@ export function LockersView() {
           )}
         </Box>
       </Stack>
-    </DialogRoot>
+    </DialogRoot >
   );
 }
