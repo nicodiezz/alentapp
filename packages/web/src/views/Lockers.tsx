@@ -73,6 +73,12 @@ export function LockersView() {
     ],
   });
 
+  const availableStatusCollection = createListCollection({
+    items: formData.member_id
+      ? statusCollection.items.filter((item) => item.value === "Occupied")
+      : statusCollection.items,
+  });
+
   const fetchLockers = async () => {
     setIsLoading(true);
     setError(null);
@@ -101,7 +107,7 @@ export function LockersView() {
     setFormData({
       number: locker.number,
       location: locker.location,
-      status: locker.status,
+      status: locker.member_id ? "Occupied" : locker.status,
       member_id: locker.member_id ?? "",
     });
     setIsDialogOpen(true);
@@ -210,7 +216,7 @@ export function LockersView() {
                   <>
                     <Field label="Estado" required>
                       <SelectRoot
-                        collection={statusCollection}
+                        collection={availableStatusCollection}
                         value={[formData.status]}
                         onValueChange={(e) =>
                           setFormData({ ...formData, status: e.value[0] as LockerStatus })
@@ -220,18 +226,11 @@ export function LockersView() {
                           <SelectValueText placeholder="Seleccione un estado" />
                         </SelectTrigger>
                         <SelectContent>
-                          {formData.member_id
-                            ? statusCollection.items.map((item) => (
-                              <SelectItem item={item} key={item.value}>
-                                {item.value}
-                              </SelectItem>
-                            ))
-                            : (
-                              < SelectItem item={{label:'Ocupado', value:'ocuppied'}} key={'ocuppied'}>
-                                Ocupado
-                              </SelectItem>
-                            )
-                          }
+                          {availableStatusCollection.items.map((item) => (
+                            <SelectItem item={item} key={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </SelectRoot>
                     </Field>
@@ -243,6 +242,7 @@ export function LockersView() {
                           setFormData({
                             ...formData,
                             member_id: e.value[0] === "none" ? "" : e.value[0],
+                            status: e.value[0] === "none" ? formData.status : "Occupied",
                           })
                         }
                       >
