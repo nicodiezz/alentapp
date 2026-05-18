@@ -220,11 +220,18 @@ export function LockersView() {
                           <SelectValueText placeholder="Seleccione un estado" />
                         </SelectTrigger>
                         <SelectContent>
-                          {statusCollection.items.map((item) => (
-                            <SelectItem item={item} key={item.value}>
-                              {item.value}
-                            </SelectItem>
-                          ))}
+                          {formData.member_id
+                            ? statusCollection.items.map((item) => (
+                              <SelectItem item={item} key={item.value}>
+                                {item.value}
+                              </SelectItem>
+                            ))
+                            : (
+                              < SelectItem item={{label:'Ocupado', value:'ocuppied'}} key={'ocuppied'}>
+                                Ocupado
+                              </SelectItem>
+                            )
+                          }
                         </SelectContent>
                       </SelectRoot>
                     </Field>
@@ -352,6 +359,6 @@ export function LockersView() {
           )}
         </Box>
       </Stack>
-    </DialogRoot>
+    </DialogRoot >
   );
 }
