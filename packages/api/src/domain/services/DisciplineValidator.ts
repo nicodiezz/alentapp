@@ -1,7 +1,7 @@
 export class DisciplineValidator {
     validateDates(issue_date: string | Date, expiry_date: string | Date): void {
-        if (issue_date > expiry_date) {
-            throw new Error('La fecha de fin de suspensión no puede ser previa a la fecha de inicio');
+        if (issue_date >= expiry_date) {
+            throw new Error('La fecha de fin de suspensión no puede ser previa o igual a la fecha de inicio');
         }
     }
 
