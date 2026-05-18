@@ -64,19 +64,26 @@ export function LockersView() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingLockerId, setEditingLockerId] = useState<string | null>(null);
+  const [editingLockerInitialStatus, setEditingLockerInitialStatus] = useState<LockerStatus | null>(null);
   const [formData, setFormData] = useState<LockerFormData>(initialFormData);
 
+  const isEditingMaintenanceLocker = editingLockerInitialStatus === "Maintenance";
+
   const memberCollection = createListCollection({
-    items: [
-      { label: "Sin socio asignado", value: "none" },
-      ...members.map((member) => ({ label: member.name, value: member.id })),
-    ],
+    items: isEditingMaintenanceLocker || formData.status === "Maintenance"
+      ? [{ label: "Sin socio asignado", value: "none" }]
+      : [
+          { label: "Sin socio asignado", value: "none" },
+          ...members.map((member) => ({ label: member.name, value: member.id })),
+        ],
   });
 
   const availableStatusCollection = createListCollection({
-    items: formData.member_id
-      ? statusCollection.items.filter((item) => item.value === "Occupied")
-      : statusCollection.items,
+    items: isEditingMaintenanceLocker
+      ? statusCollection.items.filter((item) => item.value === "Available")
+      : formData.member_id
+        ? statusCollection.items.filter((item) => item.value === "Occupied")
+        : statusCollection.items,
   });
 
   const fetchLockers = async () => {
@@ -98,17 +105,19 @@ export function LockersView() {
 
   const openCreateModal = () => {
     setEditingLockerId(null);
+    setEditingLockerInitialStatus(null);
     setFormData(initialFormData);
     setIsDialogOpen(true);
   };
 
   const openEditModal = (locker: LockerDTO) => {
     setEditingLockerId(locker.id);
+    setEditingLockerInitialStatus(locker.status);
     setFormData({
       number: locker.number,
       location: locker.location,
-      status: locker.member_id ? "Occupied" : locker.status,
-      member_id: locker.member_id ?? "",
+      status: locker.status === "Maintenance" ? "Available" : locker.member_id ? "Occupied" : locker.status,
+      member_id: locker.status === "Maintenance" ? "" : locker.member_id ?? "",
     });
     setIsDialogOpen(true);
   };
@@ -218,9 +227,14 @@ export function LockersView() {
                       <SelectRoot
                         collection={availableStatusCollection}
                         value={[formData.status]}
-                        onValueChange={(e) =>
-                          setFormData({ ...formData, status: e.value[0] as LockerStatus })
-                        }
+                        onValueChange={(e) => {
+                          const status = e.value[0] as LockerStatus;
+                          setFormData({
+                            ...formData,
+                            status,
+                            member_id: status === "Maintenance" || isEditingMaintenanceLocker ? "" : formData.member_id,
+                          });
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValueText placeholder="Seleccione un estado" />
