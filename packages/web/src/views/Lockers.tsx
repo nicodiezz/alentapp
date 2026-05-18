@@ -153,6 +153,10 @@ export function LockersView() {
     return { bg: "orange.50", color: "orange.700" };
   };
 
+  const getStatusLabel = (status: LockerStatus) => {
+    return statusCollection.items.find((item) => item.value === status)?.label ?? status;
+  };
+
   useEffect(() => {
     fetchLockers();
   }, []);
@@ -325,7 +329,7 @@ export function LockersView() {
                           fontSize="xs"
                           fontWeight="bold"
                         >
-                          {locker.status}
+                          {getStatusLabel(locker.status)}
                         </Box>
                       </Table.Cell>
                       <Table.Cell color="fg.muted">{getMemberName(locker.member_id)}</Table.Cell>
