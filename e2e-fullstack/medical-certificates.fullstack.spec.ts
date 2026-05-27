@@ -77,6 +77,15 @@ test.describe('Medical Certificates Full-Stack E2E', () => {
     test('debe invalidar el certificado anterior al crear uno nuevo para el mismo socio', async ({ page }) => {
         await page.goto('/medical-certificates');
 
+        // Valida el certificado existente para que findActiveByMemberId lo encuentre como activo
+        await page.getByRole('button', { name: /Editar certificado/i }).first().click();
+        await expect(page.getByText(/Editar Certificado Medico/i)).toBeVisible();
+        await page.locator('input[type="checkbox"]').check();
+        await page.getByRole('button', { name: /Guardar Cambios/i }).click();
+        await expect(page.getByRole('button', { name: /Guardar Cambios/i })).toBeHidden();
+        await expect(page.getByText(/^Si$/).first()).toBeVisible({ timeout: 10000 });
+
+        // Registra nuevo certificado
         await page.getByRole('button', { name: /Registrar Certificado Medico/i }).click();
         await expect(page.getByText(/Agregar Certificado Medico/i)).toBeVisible();
 
@@ -91,12 +100,15 @@ test.describe('Medical Certificates Full-Stack E2E', () => {
 
         await expect(page.getByText('MP-E2E-NUEVO')).toBeVisible({ timeout: 10000 });
 
-        // El viejo queda invalidado => "No"
-        await expect(page.getByText(/^No$/).first()).toBeVisible({ timeout: 10000 });
+        // El certificado anterior fue invalidado por el caso de uso al crear un nuevo certificado, ahora muestra "No"
+        const rows = page.getByRole('row');
+        const oldRow = rows.filter({ hasText: 'MP-E2E-EDITADO' });
+        await expect(oldRow.getByText(/^No$/)).toBeVisible({ timeout: 10000 });
     });
 
     test('debe mostrar error si expiry_date es anterior a issue_date', async ({ page }) => {
         await page.goto('/medical-certificates');
+        page.on('dialog', async (dialog) => { await dialog.accept();}); //si la app llega a abrir un alert o un confirm, lo acepta automaticamente para no dejar colgado al test, sino quizas nunca se ejecute
 
         await page.getByRole('button', { name: /Registrar Certificado Medico/i }).click();
 
@@ -108,10 +120,6 @@ test.describe('Medical Certificates Full-Stack E2E', () => {
         await page.getByText('Socio Medical Certificate E2E').last().click();
 
         await page.getByRole('button', { name: /Crear Certificado/i }).click();
-
-        page.on('dialog', async (dialog) => {
-            await dialog.accept();
-        });
 
         await expect(page.getByText(/Agregar Certificado Medico/i)).toBeVisible({ timeout: 10000 });
     });
