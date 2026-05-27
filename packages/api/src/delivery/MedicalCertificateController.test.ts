@@ -97,6 +97,15 @@ describe('MedicalCertificateController', () => {
             expect(mockReply.status).toHaveBeenCalledWith(400);
             expect(mockReply.send).toHaveBeenCalledWith({ error: 'El certificado no existe' });
         });
+
+        it('debe devolver status 500 ante un error genérico (ej: error de BD)', async () => {
+            mockDeleteUseCase.execute.mockRejectedValueOnce(new Error('Generic failure'));
+
+            await controller.delete(mockRequest as any, mockReply as any);
+
+            expect(mockReply.status).toHaveBeenCalledWith(500);
+            expect(mockReply.send).toHaveBeenCalledWith({ error: 'Error interno, reintente más tarde' });
+        });
     });
 
     describe('getAll', () => {
