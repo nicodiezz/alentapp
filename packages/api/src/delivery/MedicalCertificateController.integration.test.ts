@@ -4,13 +4,15 @@ import { FastifyInstance } from 'fastify';
 import { buildApp } from '../app.js';
 import { CreateMedicalCertificateRequest } from '@alentapp/shared';
 
+const mockInvalidateById = vi.fn();
+
 vi.mock('../infrastructure/PostgresMedicalCertificateRepository.js', () => {
 	return {
 		PostgresMedicalCertificateRepository: class {
 			async findAll() { return [{ id: '1', issue_date: '2026-01-01', expiry_date: '2027-01-01', doctor_license: 'MED-123', member_id: 'uuid-member-1', is_validated: false }]; }
 			async findById(id: string) { return id === '1' ? { id: '1', issue_date: '2026-01-01', expiry_date: '2027-01-01', doctor_license: 'MED-123', member_id: 'uuid-member-1', is_validated: false } : null; }
-			async findActiveByMemberId(memberId: string) { return null; }
-			async invalidateById(id: string) { return; }
+			async findActiveByMemberId(memberId: string) { return memberId === 'uuid-member-2' ? { id: 'cert-activo', issue_date: '2025-01-01', expiry_date: '2026-06-01', doctor_license: 'MED-OLD', member_id: 'uuid-member-2', is_validated: false } : null; }
+			async invalidateById(id: string) { return mockInvalidateById(id); }
 			async create(data: any) { return { id: '2', ...data, is_validated: false }; }
 			async update(id: string, data: any) { return { id, ...data }; }
 			async delete(id: string) { return; }
@@ -22,7 +24,7 @@ vi.mock('../infrastructure/PostgresMemberRepository.js', () => {
 	return {
 		PostgresMemberRepository: class {
 			async findById(id: string) {
-				return id === 'uuid-member-1' ? { id: 'uuid-member-1', name: 'Socio Existente' } : null;
+				return (id === 'uuid-member-1' || id === 'uuid-member-2') ? { id, name: 'Socio Existente' } : null;
 			}
 		}
 	};
@@ -132,6 +134,29 @@ describe('MedicalCertificate API Integration Tests', () => {
 			expect(response.statusCode).toBe(400);
 			const body = JSON.parse(response.payload);
 			expect(body.error).toBe('Todos los campos son requeridos');
+		});
+
+		it('debe invalidar el certificado activo previo y crear el nuevo exitosamente si el socio ya tenía uno', async () => {
+			mockInvalidateById.mockResolvedValue(undefined);
+
+			const payload: CreateMedicalCertificateRequest = {
+				issue_date: '2026-06-01',
+				expiry_date: '2027-06-01',
+				doctor_license: 'MED-NEW',
+				member_id: 'uuid-member-2',
+			};
+
+			const response = await app.inject({
+				method: 'POST',
+				url: '/api/v1/medical-certificates',
+				payload
+			});
+
+			expect(response.statusCode).toBe(201);
+			const body = JSON.parse(response.payload);
+			expect(body.data.doctor_license).toBe('MED-NEW');
+			expect(body.data.id).toBeDefined();
+			expect(mockInvalidateById).toHaveBeenCalledWith('cert-activo');
 		});
 	});
 
