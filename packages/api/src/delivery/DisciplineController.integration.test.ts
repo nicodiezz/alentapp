@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { FastifyInstance } from 'fastify';
 import { buildApp } from '../app.js';
 import { CreateDisciplineRequest, UpdateDisciplineRequest } from '@alentapp/shared';
+import 'dotenv/config';
 
 vi.mock('../infrastructure/PostgresMemberRepository.js', () => {
     return {
