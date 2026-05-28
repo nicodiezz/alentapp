@@ -190,6 +190,8 @@ describe('Discipline API End-to-End Tests', () => {
 
         const dbDiscipline = await prisma.discipline.findUnique({ where: { id: createdDisciplineId } });
         expect(dbDiscipline).toBeNull();
+        
+        createdDisciplineId = '';
     });
 
     it('9. DELETE: Debe fallar con 404 si la suspension no existe', async () => {
