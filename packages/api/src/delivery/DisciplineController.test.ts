@@ -107,6 +107,7 @@ describe('DisciplineController', () => {
 
             await controller.update(mockRequest as any, mockReply as any);
 
+            expect(mockUpdateUseCase.execute).toHaveBeenCalledWith('123', { reason: 'Pelea' });
             expect(mockReply.status).toHaveBeenCalledWith(200);
             expect(mockReply.send).toHaveBeenCalledWith({ data: mockSuspension });
         });
