@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
+import type { EquipmentLoanDTO, MemberDTO } from '@alentapp/shared';
 
 test.describe('EquipmentLoans E2E (UI Integration)', () => {
   test.beforeEach(async ({ page }) => {
     page.on('console', msg => console.log('BROWSER CONSOLE:', msg.text()));
 
     // Estado en memoria simulando la Base de Datos para estos tests
-    const mockMembers = [
+    const mockMembers: MemberDTO[] = [
       {
         id: 'member-pleno-1',
         dni: '12345678',
@@ -18,7 +19,7 @@ test.describe('EquipmentLoans E2E (UI Integration)', () => {
       },
     ];
 
-    const mockLoans: any[] = [
+    const mockLoans: EquipmentLoanDTO[] = [
       {
         id: '1',
         item_name: 'Raqueta de tenis',
@@ -66,7 +67,7 @@ test.describe('EquipmentLoans E2E (UI Integration)', () => {
         });
       } else if (method === 'POST') {
         const payload = route.request().postDataJSON();
-        const newLoan = {
+        const newLoan: EquipmentLoanDTO = {
           id: String(mockLoans.length + 1),
           status: 'Loaned', // TDD 0019: estado por defecto
           ...payload,
