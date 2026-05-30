@@ -22,34 +22,42 @@ const mockSports = vi.hoisted<SportDTO[]>(() => [
     },
 ]);
 
+const mockSportRepository = vi.hoisted(() => ({
+    findAll: vi.fn<() => Promise<SportDTO[]>>(),
+    findById: vi.fn<(id: string) => Promise<SportDTO | null>>(),
+    findByName: vi.fn<(name: string) => Promise<SportDTO | null>>(),
+    create: vi.fn<(data: CreateSportRequest) => Promise<SportDTO>>(),
+    update: vi.fn<(id: string, data: UpdateSportRequest) => Promise<SportDTO>>(),
+    delete: vi.fn<(id: string) => Promise<void>>(),
+}));
+
 // Mockeamos los repositorios para que la API completa funcione sin conectarse a la Base de Datos real.
 // En Sport dejamos comportamiento suficiente para testear Fastify -> Controller -> UseCase -> Validator.
 vi.mock('../infrastructure/PostgresSportRepository.js', () => {
     return {
         PostgresSportRepository: class {
             async findAll() {
-                return mockSports;
+                return mockSportRepository.findAll();
             }
 
             async findById(id: string) {
-                return mockSports.find((sport) => sport.id === id) ?? null;
+                return mockSportRepository.findById(id);
             }
 
             async findByName(name: string) {
-                return mockSports.find((sport) => sport.name === name) ?? null;
+                return mockSportRepository.findByName(name);
             }
 
             async create(data: CreateSportRequest) {
-                return { id: '3', ...data };
+                return mockSportRepository.create(data);
             }
 
             async update(id: string, data: UpdateSportRequest) {
-                const sport = mockSports.find((item) => item.id === id);
-                return { ...sport, ...data };
+                return mockSportRepository.update(id, data);
             }
 
-            async delete() {
-                return;
+            async delete(id: string) {
+                return mockSportRepository.delete(id);
             }
         },
     };
@@ -92,7 +100,30 @@ describe('Sport API Integration Tests', () => {
     });
 
     beforeEach(() => {
-        vi.clearAllMocks();
+        mockSportRepository.findAll.mockReset();
+        mockSportRepository.findById.mockReset();
+        mockSportRepository.findByName.mockReset();
+        mockSportRepository.create.mockReset();
+        mockSportRepository.update.mockReset();
+        mockSportRepository.delete.mockReset();
+
+        mockSportRepository.findAll.mockResolvedValue(mockSports);
+        mockSportRepository.findById.mockImplementation(async (id) =>
+            mockSports.find((sport) => sport.id === id) ?? null
+        );
+        mockSportRepository.findByName.mockImplementation(async (name) =>
+            mockSports.find((sport) => sport.name === name) ?? null
+        );
+        mockSportRepository.create.mockImplementation(async (data) => ({ id: '3', ...data }));
+        mockSportRepository.update.mockImplementation(async (id, data) => {
+            const sport = mockSports.find((item) => item.id === id);
+            if (!sport) {
+                throw new Error('El deporte no existe');
+            }
+
+            return { ...sport, ...data };
+        });
+        mockSportRepository.delete.mockResolvedValue(undefined);
     });
 
     describe('GET /api/v1/sports', () => {
@@ -192,6 +223,28 @@ describe('Sport API Integration Tests', () => {
             const body = JSON.parse(response.payload);
             expect(body.error).toBe('La capacidad máxima debe ser mayor a cero');
         });
+
+        it('debe retornar 500 si ocurre un error de conexión a DB al crear', async () => {
+            mockSportRepository.create.mockRejectedValueOnce(new Error('Error de conexión a DB'));
+
+            const payload: CreateSportRequest = {
+                name: 'Handball',
+                description: 'Entrenamiento competitivo',
+                max_capacity: 16,
+                additional_price: 1300,
+                requires_medical_certificate: true,
+            };
+
+            const response = await app.inject({
+                method: 'POST',
+                url: '/api/v1/sports',
+                payload,
+            });
+
+            expect(response.statusCode).toBe(500);
+            const body = JSON.parse(response.payload);
+            expect(body.error).toBe('Error interno, reintente más tarde');
+        });
     });
 
     describe('PUT /api/v1/sports/:id', () => {
@@ -226,6 +279,20 @@ describe('Sport API Integration Tests', () => {
             expect(body.error).toBe('El nombre del deporte no puede modificarse');
         });
 
+        it('debe retornar 400 si la capacidad máxima no es válida al actualizar', async () => {
+            const response = await app.inject({
+                method: 'PUT',
+                url: '/api/v1/sports/1',
+                payload: {
+                    max_capacity: 0,
+                },
+            });
+
+            expect(response.statusCode).toBe(400);
+            const body = JSON.parse(response.payload);
+            expect(body.error).toBe('La capacidad máxima debe ser mayor a cero');
+        });
+
         it('debe retornar 404 si el deporte a actualizar no existe', async () => {
             const response = await app.inject({
                 method: 'PUT',
@@ -238,6 +305,23 @@ describe('Sport API Integration Tests', () => {
             expect(response.statusCode).toBe(404);
             const body = JSON.parse(response.payload);
             expect(body.error).toBe('El deporte no existe');
+        });
+
+        it('debe retornar 500 si ocurre un error de conexión a DB al actualizar', async () => {
+            mockSportRepository.update.mockRejectedValueOnce(new Error('Error de conexión a DB'));
+
+            const response = await app.inject({
+                method: 'PUT',
+                url: '/api/v1/sports/1',
+                payload: {
+                    description: 'Descripción válida',
+                    max_capacity: 22,
+                },
+            });
+
+            expect(response.statusCode).toBe(500);
+            const body = JSON.parse(response.payload);
+            expect(body.error).toBe('Error interno, reintente más tarde');
         });
     });
 
@@ -261,6 +345,19 @@ describe('Sport API Integration Tests', () => {
             expect(response.statusCode).toBe(404);
             const body = JSON.parse(response.payload);
             expect(body.error).toBe('El deporte no existe');
+        });
+
+        it('debe retornar 500 si ocurre un error de conexión a DB al eliminar', async () => {
+            mockSportRepository.delete.mockRejectedValueOnce(new Error('Error de conexión a DB'));
+
+            const response = await app.inject({
+                method: 'DELETE',
+                url: '/api/v1/sports/1',
+            });
+
+            expect(response.statusCode).toBe(500);
+            const body = JSON.parse(response.payload);
+            expect(body.error).toBe('Error interno, reintente más tarde');
         });
     });
 });
