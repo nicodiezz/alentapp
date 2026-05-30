@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { FastifyInstance } from 'fastify';
 import { buildApp } from '../app.js';
-import { CreateSportRequest } from '@alentapp/shared';
+import { CreateSportRequest, SportDTO, UpdateSportRequest } from '@alentapp/shared';
 
-const mockSports = vi.hoisted(() => [
+const mockSports = vi.hoisted<SportDTO[]>(() => [
     {
         id: '1',
         name: 'Natación',
@@ -39,11 +39,11 @@ vi.mock('../infrastructure/PostgresSportRepository.js', () => {
                 return mockSports.find((sport) => sport.name === name) ?? null;
             }
 
-            async create(data: any) {
+            async create(data: CreateSportRequest) {
                 return { id: '3', ...data };
             }
 
-            async update(id: string, data: any) {
+            async update(id: string, data: UpdateSportRequest) {
                 const sport = mockSports.find((item) => item.id === id);
                 return { ...sport, ...data };
             }
@@ -56,27 +56,27 @@ vi.mock('../infrastructure/PostgresSportRepository.js', () => {
 });
 
 vi.mock('../infrastructure/PostgresMemberRepository.js', () => ({
-    PostgresMemberRepository: class {},
+    PostgresMemberRepository: class { },
 }));
 
 vi.mock('../infrastructure/PostgresPaymentRepository.js', () => ({
-    PostgresPaymentRepository: class {},
+    PostgresPaymentRepository: class { },
 }));
 
 vi.mock('../infrastructure/PostgresDisciplineRepository.js', () => ({
-    PostgresDisciplineRepository: class {},
+    PostgresDisciplineRepository: class { },
 }));
 
 vi.mock('../infrastructure/PostgresEquipmentLoanRepository.js', () => ({
-    PostgresEquipmentLoanRepository: class {},
+    PostgresEquipmentLoanRepository: class { },
 }));
 
 vi.mock('../infrastructure/PostgresMedicalCertificateRepository.js', () => ({
-    PostgresMedicalCertificateRepository: class {},
+    PostgresMedicalCertificateRepository: class { },
 }));
 
 vi.mock('../infrastructure/PostgresLockerRepository.js', () => ({
-    PostgresLockerRepository: class {},
+    PostgresLockerRepository: class { },
 }));
 
 describe('Sport API Integration Tests', () => {
