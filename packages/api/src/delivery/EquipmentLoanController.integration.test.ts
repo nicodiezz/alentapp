@@ -34,10 +34,10 @@ vi.mock('../infrastructure/PostgresEquipmentLoanRepository.js', () => {
                 }
                 return null;
             }
-            async create(data: any) {
+            async create(data: CreateEquipmentLoanRequest) {
                 return { id: '2', status: 'Loaned', ...data };
             }
-            async update(id: string, data: any) {
+            async update(id: string, data: UpdateEquipmentLoanRequest) {
                 return {
                     id,
                     item_name: 'Raqueta',
