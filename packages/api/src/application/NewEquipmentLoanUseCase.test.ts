@@ -5,19 +5,33 @@ import { EquipmentLoanValidator } from '../domain/services/EquipmentLoanValidato
 import { CreateEquipmentLoanRequest } from '@alentapp/shared';
 
 describe('CreateEquipmentLoanUseCase', () => {
-    // 1. Creamos Mocks de nuestras dependencias (Puertos y Servicios)
-    const mockEquipmentLoanRepo = {
+    // 1. Creamos Mocks tipados de nuestras dependencias (Puertos y Servicios).
+    //    Implementamos la interfaz completa del repositorio y un Pick del validador (clase)
+    //    para que TypeScript valide la forma de los mocks contra los tipos reales.
+    const mockEquipmentLoanRepo: EquipmentLoanRepository = {
         create: vi.fn(),
-    } as unknown as EquipmentLoanRepository;
+        findById: vi.fn(),
+        update: vi.fn(),
+        findAll: vi.fn(),
+        delete: vi.fn(),
+    };
 
-    const mockEquipmentLoanValidator = {
+    type EquipmentLoanValidatorMock = Pick<
+        EquipmentLoanValidator,
+        'validateDateFormat' | 'validateLoanDates' | 'validateMemberCanBorrow'
+    >;
+
+    const mockEquipmentLoanValidator: EquipmentLoanValidatorMock = {
         validateDateFormat: vi.fn(),
         validateLoanDates: vi.fn(),
         validateMemberCanBorrow: vi.fn(),
-    } as unknown as EquipmentLoanValidator;
+    };
 
     // 2. Instanciamos el caso de uso inyectando los mocks
-    const useCase = new CreateEquipmentLoanUseCase(mockEquipmentLoanRepo, mockEquipmentLoanValidator);
+    const useCase = new CreateEquipmentLoanUseCase(
+        mockEquipmentLoanRepo,
+        mockEquipmentLoanValidator as EquipmentLoanValidator,
+    );
 
     beforeEach(() => {
         vi.clearAllMocks();

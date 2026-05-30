@@ -1,13 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EquipmentLoanValidator } from './EquipmentLoanValidator.js';
 import { MemberRepository } from '../MemberRepository.js';
+import { MemberDTO } from '@alentapp/shared';
 
 describe('EquipmentLoanValidator', () => {
-    const mockMemberRepo = {
+    const mockMemberRepo: MemberRepository = {
+        create: vi.fn(),
         findById: vi.fn(),
-    } as unknown as MemberRepository;
+        findByDni: vi.fn(),
+        findAll: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+    };
 
     const validator = new EquipmentLoanValidator(mockMemberRepo);
+
+    // Helper para construir un MemberDTO completo y tipado en cada test
+    const buildMember = (overrides: Partial<MemberDTO> = {}): MemberDTO => ({
+        id: 'uuid-member-1',
+        dni: '12345678',
+        name: 'Socio Test',
+        email: 'socio@test.com',
+        birthdate: '1990-01-01',
+        category: 'Pleno',
+        status: 'Activo',
+        created_at: '2026-01-01T00:00:00.000Z',
+        ...overrides,
+    });
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -15,20 +34,18 @@ describe('EquipmentLoanValidator', () => {
 
     describe('validateMemberCanBorrow', () => {
         it('debe pasar si el socio existe y su categoría es Pleno', async () => {
-            vi.mocked(mockMemberRepo.findById).mockResolvedValueOnce({
-                id: 'uuid-member-1',
-                category: 'Pleno',
-            } as any);
+            vi.mocked(mockMemberRepo.findById).mockResolvedValueOnce(
+                buildMember({ id: 'uuid-member-1', category: 'Pleno' }),
+            );
 
             await expect(validator.validateMemberCanBorrow('uuid-member-1')).resolves.not.toThrow();
             expect(mockMemberRepo.findById).toHaveBeenCalledWith('uuid-member-1');
         });
 
         it('debe pasar si el socio existe y su categoría es Honorario', async () => {
-            vi.mocked(mockMemberRepo.findById).mockResolvedValueOnce({
-                id: 'uuid-member-2',
-                category: 'Honorario',
-            } as any);
+            vi.mocked(mockMemberRepo.findById).mockResolvedValueOnce(
+                buildMember({ id: 'uuid-member-2', category: 'Honorario' }),
+            );
 
             await expect(validator.validateMemberCanBorrow('uuid-member-2')).resolves.not.toThrow();
         });
@@ -40,10 +57,9 @@ describe('EquipmentLoanValidator', () => {
         });
 
         it('debe lanzar error si el socio es Cadete', async () => {
-            vi.mocked(mockMemberRepo.findById).mockResolvedValueOnce({
-                id: 'uuid-cadete',
-                category: 'Cadete',
-            } as any);
+            vi.mocked(mockMemberRepo.findById).mockResolvedValueOnce(
+                buildMember({ id: 'uuid-cadete', category: 'Cadete' }),
+            );
 
             await expect(validator.validateMemberCanBorrow('uuid-cadete')).rejects.toThrow(
                 'La categoría del socio no le permite tomar prestamos',

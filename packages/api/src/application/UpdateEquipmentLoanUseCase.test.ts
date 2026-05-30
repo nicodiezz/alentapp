@@ -5,19 +5,30 @@ import { EquipmentLoanValidator } from '../domain/services/EquipmentLoanValidato
 import { UpdateEquipmentLoanRequest, EquipmentLoanDTO } from '@alentapp/shared';
 
 describe('UpdateEquipmentLoanUseCase', () => {
-    const mockEquipmentLoanRepo = {
+    const mockEquipmentLoanRepo: EquipmentLoanRepository = {
+        create: vi.fn(),
         findById: vi.fn(),
         update: vi.fn(),
-    } as unknown as EquipmentLoanRepository;
+        findAll: vi.fn(),
+        delete: vi.fn(),
+    };
 
-    const mockEquipmentLoanValidator = {
+    type EquipmentLoanValidatorMock = Pick<
+        EquipmentLoanValidator,
+        'validateStatus' | 'validateDateFormat' | 'validateLoanDates' | 'validateMemberCanBorrow'
+    >;
+
+    const mockEquipmentLoanValidator: EquipmentLoanValidatorMock = {
         validateStatus: vi.fn(),
         validateDateFormat: vi.fn(),
         validateLoanDates: vi.fn(),
         validateMemberCanBorrow: vi.fn(),
-    } as unknown as EquipmentLoanValidator;
+    };
 
-    const useCase = new UpdateEquipmentLoanUseCase(mockEquipmentLoanRepo, mockEquipmentLoanValidator);
+    const useCase = new UpdateEquipmentLoanUseCase(
+        mockEquipmentLoanRepo,
+        mockEquipmentLoanValidator as EquipmentLoanValidator,
+    );
 
     const mockExistingLoan: EquipmentLoanDTO = {
         id: 'uuid-loan-1',

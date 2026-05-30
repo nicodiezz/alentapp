@@ -1,14 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DeleteEquipmentLoanUseCase } from './DeleteEquipmentLoanUseCase.js';
 import { EquipmentLoanRepository } from '../domain/EquipmentLoanRepository.js';
+import { EquipmentLoanDTO } from '@alentapp/shared';
 
 describe('DeleteEquipmentLoanUseCase', () => {
-    const mockEquipmentLoanRepo = {
+    const mockEquipmentLoanRepo: EquipmentLoanRepository = {
+        create: vi.fn(),
         findById: vi.fn(),
+        update: vi.fn(),
+        findAll: vi.fn(),
         delete: vi.fn(),
-    } as unknown as EquipmentLoanRepository;
+    };
 
     const useCase = new DeleteEquipmentLoanUseCase(mockEquipmentLoanRepo);
+
+    const mockExistingLoan: EquipmentLoanDTO = {
+        id: 'uuid-loan-1',
+        item_name: 'Raqueta',
+        status: 'Loaned',
+        loan_date: '2026-05-01',
+        due_date: '2026-05-15',
+        member_id: 'uuid-member-1',
+    };
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -21,7 +34,7 @@ describe('DeleteEquipmentLoanUseCase', () => {
     });
 
     it('debe eliminar el préstamo si existe', async () => {
-        vi.mocked(mockEquipmentLoanRepo.findById).mockResolvedValueOnce({ id: 'uuid-loan-1' } as any);
+        vi.mocked(mockEquipmentLoanRepo.findById).mockResolvedValueOnce(mockExistingLoan);
         await useCase.execute('uuid-loan-1');
         expect(mockEquipmentLoanRepo.delete).toHaveBeenCalledWith('uuid-loan-1');
     });
