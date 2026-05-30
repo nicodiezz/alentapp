@@ -5,14 +5,17 @@ import { SportValidator } from '../domain/services/SportValidator.js';
 import { SportDTO, UpdateSportRequest } from '@alentapp/shared';
 
 describe('UpdateSportUseCase', () => {
-    const mockSportRepo = {
+    const mockSportRepo: SportRepository = {
+        create: vi.fn(),
+        findAll: vi.fn(),
         findById: vi.fn(),
+        findByName: vi.fn(),
         update: vi.fn(),
-    } as unknown as SportRepository;
+        delete: vi.fn(),
+    };
 
-    const mockSportValidator = {
-        validateMaxCapacity: vi.fn(),
-    } as unknown as SportValidator;
+    const mockSportValidator = new SportValidator(mockSportRepo);
+    const validateMaxCapacitySpy = vi.spyOn(mockSportValidator, 'validateMaxCapacity');
 
     const useCase = new UpdateSportUseCase(mockSportRepo, mockSportValidator);
 
@@ -28,6 +31,7 @@ describe('UpdateSportUseCase', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(mockSportRepo.findById).mockResolvedValue(mockExistingSport);
+        validateMaxCapacitySpy.mockImplementation(() => undefined);
     });
 
     it('debe lanzar error si el deporte no existe', async () => {
@@ -38,7 +42,9 @@ describe('UpdateSportUseCase', () => {
     });
 
     it('debe lanzar error si se intenta modificar el nombre', async () => {
-        await expect(useCase.execute('sport-1', { name: 'Tenis' } as any)).rejects.toThrow(
+        const updateData: UpdateSportRequest & { name: string } = { name: 'Tenis' };
+
+        await expect(useCase.execute('sport-1', updateData)).rejects.toThrow(
             'El nombre del deporte no puede modificarse',
         );
         expect(mockSportRepo.update).not.toHaveBeenCalled();
@@ -50,7 +56,7 @@ describe('UpdateSportUseCase', () => {
 
         await useCase.execute('sport-1', updateData);
 
-        expect(mockSportValidator.validateMaxCapacity).toHaveBeenCalledWith(30);
+        expect(validateMaxCapacitySpy).toHaveBeenCalledWith(30);
         expect(mockSportRepo.update).toHaveBeenCalledWith('sport-1', { max_capacity: 30 });
     });
 
@@ -74,7 +80,7 @@ describe('UpdateSportUseCase', () => {
 
         await useCase.execute('sport-1', updateData);
 
-        expect(mockSportValidator.validateMaxCapacity).not.toHaveBeenCalled();
+        expect(validateMaxCapacitySpy).not.toHaveBeenCalled();
         expect(mockSportRepo.update).toHaveBeenCalledWith('sport-1', updateData);
     });
 });

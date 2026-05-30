@@ -5,18 +5,23 @@ import { SportValidator } from '../domain/services/SportValidator.js';
 import { CreateSportRequest } from '@alentapp/shared';
 
 describe('CreateSportUseCase', () => {
-    const mockSportRepo = {
+    const mockSportRepo: SportRepository = {
         create: vi.fn(),
-    } as unknown as SportRepository;
+        findAll: vi.fn(),
+        findById: vi.fn(),
+        findByName: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+    };
 
-    const mockSportValidator = {
-        validate: vi.fn(),
-    } as unknown as SportValidator;
+    const mockSportValidator = new SportValidator(mockSportRepo);
+    const validateSpy = vi.spyOn(mockSportValidator, 'validate');
 
     const useCase = new CreateSportUseCase(mockSportRepo, mockSportValidator);
 
     beforeEach(() => {
         vi.clearAllMocks();
+        validateSpy.mockResolvedValue(undefined);
     });
 
     it('debe crear un deporte exitosamente si pasa las validaciones', async () => {
@@ -73,7 +78,7 @@ describe('CreateSportUseCase', () => {
             additional_price: 1500,
             requires_medical_certificate: true,
         };
-        vi.mocked(mockSportValidator.validate).mockRejectedValueOnce(
+        validateSpy.mockRejectedValueOnce(
             new Error('La capacidad máxima debe ser mayor a cero'),
         );
 

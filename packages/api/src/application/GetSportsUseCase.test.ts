@@ -1,11 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GetSportsUseCase } from './GetSportsUseCase.js';
 import { SportRepository } from '../domain/SportRepository.js';
+import { SportDTO } from '@alentapp/shared';
 
 describe('GetSportsUseCase', () => {
-    const mockSportRepo = {
+    const mockSportRepo: SportRepository = {
+        create: vi.fn(),
         findAll: vi.fn(),
-    } as unknown as SportRepository;
+        findById: vi.fn(),
+        findByName: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+    };
 
     const useCase = new GetSportsUseCase(mockSportRepo);
 
@@ -14,11 +20,25 @@ describe('GetSportsUseCase', () => {
     });
 
     it('debe retornar la lista de deportes', async () => {
-        const mockSports = [
-            { id: 'sport-1', name: 'Natación' },
-            { id: 'sport-2', name: 'Tenis' },
+        const mockSports: SportDTO[] = [
+            {
+                id: 'sport-1',
+                name: 'Natación',
+                description: 'Clases en pileta cubierta',
+                max_capacity: 20,
+                additional_price: 1500,
+                requires_medical_certificate: true,
+            },
+            {
+                id: 'sport-2',
+                name: 'Tenis',
+                description: 'Entrenamiento en cancha',
+                max_capacity: 12,
+                additional_price: 2000,
+                requires_medical_certificate: false,
+            },
         ];
-        vi.mocked(mockSportRepo.findAll).mockResolvedValueOnce(mockSports as any);
+        vi.mocked(mockSportRepo.findAll).mockResolvedValueOnce(mockSports);
 
         const result = await useCase.execute();
 

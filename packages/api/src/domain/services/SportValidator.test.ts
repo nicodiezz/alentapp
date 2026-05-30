@@ -1,12 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SportValidator } from './SportValidator.js';
 import { SportRepository } from '../SportRepository.js';
-import { CreateSportRequest } from '@alentapp/shared';
+import { CreateSportRequest, SportDTO } from '@alentapp/shared';
 
 describe('SportValidator', () => {
-    const mockSportRepo = {
+    const mockSportRepo: SportRepository = {
+        create: vi.fn(),
+        findAll: vi.fn(),
+        findById: vi.fn(),
         findByName: vi.fn(),
-    } as unknown as SportRepository;
+        update: vi.fn(),
+        delete: vi.fn(),
+    };
 
     const validator = new SportValidator(mockSportRepo);
 
@@ -16,6 +21,11 @@ describe('SportValidator', () => {
         max_capacity: 20,
         additional_price: 1500,
         requires_medical_certificate: true,
+    };
+
+    const existingSport: SportDTO = {
+        id: 'sport-1',
+        ...validSport,
     };
 
     beforeEach(() => {
@@ -43,21 +53,31 @@ describe('SportValidator', () => {
         });
 
         it('debe lanzar error si el precio adicional no fue informado', async () => {
-            await expect(validator.validate({ ...validSport, additional_price: undefined as any })).rejects.toThrow(
+            const invalidSport: Partial<CreateSportRequest> = {
+                ...validSport,
+                additional_price: undefined,
+            };
+
+            await expect(validator.validate(invalidSport as CreateSportRequest)).rejects.toThrow(
                 'El precio adicional es requerido',
             );
             expect(mockSportRepo.findByName).not.toHaveBeenCalled();
         });
 
         it('debe lanzar error si el certificado médico no fue informado', async () => {
-            await expect(
-                validator.validate({ ...validSport, requires_medical_certificate: undefined as any }),
-            ).rejects.toThrow('El certificado médico es requerido');
+            const invalidSport: Partial<CreateSportRequest> = {
+                ...validSport,
+                requires_medical_certificate: undefined,
+            };
+
+            await expect(validator.validate(invalidSport as CreateSportRequest)).rejects.toThrow(
+                'El certificado médico es requerido',
+            );
             expect(mockSportRepo.findByName).not.toHaveBeenCalled();
         });
 
         it('debe lanzar error si ya existe un deporte con el mismo nombre', async () => {
-            vi.mocked(mockSportRepo.findByName).mockResolvedValueOnce({ id: 'sport-1', name: 'Natación' } as any);
+            vi.mocked(mockSportRepo.findByName).mockResolvedValueOnce(existingSport);
 
             await expect(validator.validate(validSport)).rejects.toThrow('Ya existe un deporte con ese nombre');
         });

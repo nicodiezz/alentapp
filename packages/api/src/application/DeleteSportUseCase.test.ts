@@ -1,12 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DeleteSportUseCase } from './DeleteSportUseCase.js';
 import { SportRepository } from '../domain/SportRepository.js';
+import { SportDTO } from '@alentapp/shared';
 
 describe('DeleteSportUseCase', () => {
-    const mockSportRepo = {
+    const existingSport: SportDTO = {
+        id: 'sport-1',
+        name: 'Natación',
+        description: 'Clases en pileta cubierta',
+        max_capacity: 20,
+        additional_price: 1500,
+        requires_medical_certificate: true,
+    };
+
+    const mockSportRepo: SportRepository = {
+        create: vi.fn(),
+        findAll: vi.fn(),
         findById: vi.fn(),
+        findByName: vi.fn(),
+        update: vi.fn(),
         delete: vi.fn(),
-    } as unknown as SportRepository;
+    };
 
     const useCase = new DeleteSportUseCase(mockSportRepo);
 
@@ -22,7 +36,7 @@ describe('DeleteSportUseCase', () => {
     });
 
     it('debe eliminar el deporte si existe', async () => {
-        vi.mocked(mockSportRepo.findById).mockResolvedValueOnce({ id: 'sport-1' } as any);
+        vi.mocked(mockSportRepo.findById).mockResolvedValueOnce(existingSport);
 
         await useCase.execute('sport-1');
 
