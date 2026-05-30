@@ -108,6 +108,7 @@ describe('SportController', () => {
             await controller.create(request, reply);
 
             expect(mockReply.status).toHaveBeenCalledWith(400);
+            expect(mockReply.send).toHaveBeenCalledWith({ error: 'La capacidad máxima debe ser mayor a cero' });
         });
 
         it('debe devolver status 500 para cualquier otro error', async () => {
@@ -192,6 +193,16 @@ describe('SportController', () => {
             await controller.update(request, reply);
 
             expect(mockReply.status).toHaveBeenCalledWith(400);
+            expect(mockReply.send).toHaveBeenCalledWith({ error: 'El nombre del deporte no puede modificarse' });
+        });
+
+        it('debe devolver status 400 si la capacidad máxima es inválida', async () => {
+            updateExecuteSpy.mockRejectedValueOnce(new Error('La capacidad máxima debe ser mayor a cero'));
+
+            await controller.update(request, reply);
+
+            expect(mockReply.status).toHaveBeenCalledWith(400);
+            expect(mockReply.send).toHaveBeenCalledWith({ error: 'La capacidad máxima debe ser mayor a cero' });
         });
 
         it('debe devolver status 500 ante un error genérico', async () => {
