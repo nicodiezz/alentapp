@@ -43,6 +43,7 @@ test.describe('Payments Full-Stack E2E', () => {
         await expect(page.getByText('$3500')).toBeVisible();
         await expect(page.getByRole('cell', { name: '6', exact: true })).toBeVisible();
         await expect(page.getByRole('cell', { name: '2026', exact: true })).toBeVisible();
+        await expect(page.getByText('Pendiente')).toBeVisible();
     });
 
     test('debe editar el pago creado y ver el cambio en la tabla', async ({ page }) => {
@@ -68,12 +69,16 @@ test.describe('Payments Full-Stack E2E', () => {
     });
 
     test('debe cancelar el pago y mostrar el estado Cancelado en la tabla', async ({ page }) => {
+        page.on('dialog', (dialog) => {
+            expect(dialog.type()).toBe('confirm');
+            expect(dialog.message()).toContain('¿Estás seguro de que deseas cancelar este pago?');
+            dialog.accept();
+        });
+
         await page.goto('/payments');
 
         await expect(page.getByText('Juan Pérez')).toBeVisible({ timeout: 10000 });
         await expect(page.getByText('$4200')).toBeVisible();
-
-        page.on('dialog', (dialog) => dialog.accept());
 
         await page.getByRole('button', { name: /^Cancelar$/i }).first().click();
 
