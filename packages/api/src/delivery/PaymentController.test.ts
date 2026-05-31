@@ -5,7 +5,7 @@ import { GetPaymentsUseCase } from '../application/GetPaymentsUseCase.js';
 import { GetPaymentByIdUseCase } from '../application/GetPaymentUseCase.js';
 import { UpdatePaymentUseCase } from '../application/UpdatePaymentUseCase.js';
 import { CancelPaymentUseCase } from '../application/CancelPaymentUseCase.js';
-import { CreatePaymentRequest, PaymentDTO } from '@alentapp/shared';
+import { CreatePaymentRequest, UpdatePaymentRequest, PaymentDTO } from '@alentapp/shared';
 import { FastifyRequest, FastifyReply } from 'fastify';
 
 describe('PaymentController', () => {
@@ -39,6 +39,15 @@ describe('PaymentController', () => {
         } satisfies CreatePaymentRequest,
         params: { id: 'uuid-payment-1' },
     } as Partial<FastifyRequest<{ Body: CreatePaymentRequest; Params: { id: string } }>> as FastifyRequest<{ Body: CreatePaymentRequest; Params: { id: string } }>;
+
+    const mockUpdateRequest = {
+        body: {
+            amount: 2000,
+            status: 'Paid',
+            payment_date: '2026-05-29T20:00:00.000Z',
+        } satisfies UpdatePaymentRequest,
+        params: { id: 'uuid-payment-1' },
+    } as Partial<FastifyRequest<{ Body: UpdatePaymentRequest; Params: { id: string } }>> as FastifyRequest<{ Body: UpdatePaymentRequest; Params: { id: string } }>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -141,6 +150,15 @@ describe('PaymentController', () => {
             expect(mockReply.status).toHaveBeenCalledWith(500);
             expect(mockReply.send).toHaveBeenCalledWith({ error: 'Error interno, reintente más tarde' });
         });
+
+        it('debe devolver status 404 si el pago no existe ("No existe")', async () => {
+            vi.mocked(mockFindByIdUseCase.execute!).mockRejectedValueOnce(new Error('No existe un pago con ese ID'));
+
+            await controller.findById(mockRequest, mockReply);
+
+            expect(mockReply.status).toHaveBeenCalledWith(404);
+            expect(mockReply.send).toHaveBeenCalledWith({ error: 'No existe un pago con ese ID' });
+        });
     });
 
     describe('update', () => {
@@ -148,9 +166,9 @@ describe('PaymentController', () => {
             const mockPayment = { id: 'uuid-payment-1', amount: 2000, status: 'Paid' } as Partial<PaymentDTO> as PaymentDTO;
             vi.mocked(mockUpdateUseCase.execute!).mockResolvedValueOnce(mockPayment);
 
-            await controller.update(mockRequest, mockReply);
+            await controller.update(mockUpdateRequest, mockReply);
 
-            expect(mockUpdateUseCase.execute).toHaveBeenCalledWith('uuid-payment-1', mockRequest.body);
+            expect(mockUpdateUseCase.execute).toHaveBeenCalledWith('uuid-payment-1', mockUpdateRequest.body);
             expect(mockReply.status).toHaveBeenCalledWith(200);
             expect(mockReply.send).toHaveBeenCalledWith({ data: mockPayment });
         });
@@ -158,7 +176,7 @@ describe('PaymentController', () => {
         it('debe devolver status 400 si la validación falla con "inválido"', async () => {
             vi.mocked(mockUpdateUseCase.execute!).mockRejectedValueOnce(new Error('Año inválido'));
 
-            await controller.update(mockRequest, mockReply);
+            await controller.update(mockUpdateRequest, mockReply);
 
             expect(mockReply.status).toHaveBeenCalledWith(400);
             expect(mockReply.send).toHaveBeenCalledWith({ error: 'Año inválido' });
@@ -167,7 +185,7 @@ describe('PaymentController', () => {
         it('debe devolver status 400 si la validación falla con "debe"', async () => {
             vi.mocked(mockUpdateUseCase.execute!).mockRejectedValueOnce(new Error('El año debe ser mayor o igual al año actual'));
 
-            await controller.update(mockRequest, mockReply);
+            await controller.update(mockUpdateRequest, mockReply);
 
             expect(mockReply.status).toHaveBeenCalledWith(400);
             expect(mockReply.send).toHaveBeenCalledWith({ error: 'El año debe ser mayor o igual al año actual' });
@@ -176,25 +194,25 @@ describe('PaymentController', () => {
         it('debe devolver status 400 si la validación falla con "obligatoria"', async () => {
             vi.mocked(mockUpdateUseCase.execute!).mockRejectedValueOnce(new Error('La fecha de pago es obligatoria si el estado es Pagado'));
 
-            await controller.update(mockRequest, mockReply);
+            await controller.update(mockUpdateRequest, mockReply);
 
             expect(mockReply.status).toHaveBeenCalledWith(400);
             expect(mockReply.send).toHaveBeenCalledWith({ error: 'La fecha de pago es obligatoria si el estado es Pagado' });
         });
 
         it('debe devolver status 404 si el pago o el miembro no existen ("No existe")', async () => {
-            vi.mocked(mockUpdateUseCase.execute!).mockRejectedValueOnce(new Error('El miembro No existe'));
+            vi.mocked(mockUpdateUseCase.execute!).mockRejectedValueOnce(new Error('No existe un miembro con ese ID'));
 
-            await controller.update(mockRequest, mockReply);
+            await controller.update(mockUpdateRequest, mockReply);
 
             expect(mockReply.status).toHaveBeenCalledWith(404);
-            expect(mockReply.send).toHaveBeenCalledWith({ error: 'El miembro No existe' });
+            expect(mockReply.send).toHaveBeenCalledWith({ error: 'No existe un miembro con ese ID' });
         });
 
         it('debe devolver status 500 ante cualquier error inesperado', async () => {
             vi.mocked(mockUpdateUseCase.execute!).mockRejectedValueOnce(new Error('Fallo en el servidor'));
 
-            await controller.update(mockRequest, mockReply);
+            await controller.update(mockUpdateRequest, mockReply);
 
             expect(mockReply.status).toHaveBeenCalledWith(500);
             expect(mockReply.send).toHaveBeenCalledWith({ error: 'Error interno, reintente más tarde' });
@@ -223,12 +241,12 @@ describe('PaymentController', () => {
         });
 
         it('debe devolver status 404 si el pago no existe ("No existe")', async () => {
-            vi.mocked(mockCancelUseCase.execute!).mockRejectedValueOnce(new Error('El pago No existe'));
+            vi.mocked(mockCancelUseCase.execute!).mockRejectedValueOnce(new Error('No existe un pago con ese ID'));
 
             await controller.cancel(mockRequest, mockReply);
 
             expect(mockReply.status).toHaveBeenCalledWith(404);
-            expect(mockReply.send).toHaveBeenCalledWith({ error: 'El pago No existe' });
+            expect(mockReply.send).toHaveBeenCalledWith({ error: 'No existe un pago con ese ID' });
         });
 
         it('debe devolver status 500 ante un error genérico', async () => {
