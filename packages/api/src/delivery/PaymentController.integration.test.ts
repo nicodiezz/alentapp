@@ -134,7 +134,7 @@ describe('Payment API Integration Tests', () => {
     });
 
     describe('POST /api/v1/payments', () => {
-        it('debe retornar 201 y crear el pago con estado Paid por defecto', async () => {
+        it('debe retornar 201 y crear el pago con status Paid cuando todos los datos son válidos', async () => {
             const payload: CreatePaymentRequest = {
                 amount: 1000,
                 month: 5,
@@ -295,14 +295,14 @@ describe('Payment API Integration Tests', () => {
 
             expect(response.statusCode).toBe(404);
             const body = JSON.parse(response.payload);
-            expect(body.error).toBe('El pago No existe');
+            expect(body.error).toBe('No existe un pago con ese ID');
         });
 
         it('debe retornar 400 si el estado enviado no es válido', async () => {
             const response = await app.inject({
                 method: 'PUT',
                 url: '/api/v1/payments/1',
-                payload: { status: 'Unpaid' as any, payment_date: '' },
+                payload: { status: 'Unpaid' as any },
             });
 
             expect(response.statusCode).toBe(400);
@@ -321,7 +321,7 @@ describe('Payment API Integration Tests', () => {
 
             expect(response.statusCode).toBe(404);
             const body = JSON.parse(response.payload);
-            expect(body.error).toBe('El miembro No existe');
+            expect(body.error).toBe('No existe un miembro con ese ID');
         });
     });
 
@@ -344,7 +344,7 @@ describe('Payment API Integration Tests', () => {
 
             expect(response.statusCode).toBe(404);
             const body = JSON.parse(response.payload);
-            expect(body.error).toBe('El pago No existe');
+            expect(body.error).toBe('No existe un pago con ese ID');
         });
 
         it('debe retornar 409 si el pago ya se encuentra cancelado', async () => {
