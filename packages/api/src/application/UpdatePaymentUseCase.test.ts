@@ -95,7 +95,7 @@ describe('UpdatePaymentUseCase', () => {
 
         const mockRequest: UpdatePaymentRequest = { amount: 2000 };
 
-        await expect(useCase.execute('uuid-no-existe', mockRequest)).rejects.toThrow('El pago No existe');
+        await expect(useCase.execute('uuid-no-existe', mockRequest)).rejects.toThrow('No existe un pago con ese ID');
         expect(mockPaymentRepository.update).not.toHaveBeenCalled();
     });
 
@@ -104,23 +104,21 @@ describe('UpdatePaymentUseCase', () => {
 
         vi.mocked(mockMemberRepository.findById).mockResolvedValueOnce(null);
 
-        await expect(useCase.execute('uuid-payment-1', mockRequest)).rejects.toThrow('El miembro No existe');
+        await expect(useCase.execute('uuid-payment-1', mockRequest)).rejects.toThrow('No existe un miembro con ese ID');
         expect(mockPaymentRepository.update).not.toHaveBeenCalled();
     });
 
-    it('debe llamar a validatePaymentDate si se actualiza el estado o la fecha de pago', async () => {
+    it('debe rechazar la operación si se actualiza el estado a Paid y no se envía la fecha de pago', async () => {
         const mockRequest: UpdatePaymentRequest = { status: 'Paid' };
 
-        const mockUpdatedPayment: PaymentDTO = {
-            ...mockExistingPayment,
-            status: 'Paid',
-        };
+        vi.mocked(mockPaymentValidator.validatePaymentDate).mockImplementationOnce(() => {
+            throw new Error('La fecha de pago es obligatoria si el estado es Pagado');
+        });
 
-        vi.mocked(mockPaymentRepository.update).mockResolvedValueOnce(mockUpdatedPayment);
-
-        await useCase.execute('uuid-payment-1', mockRequest);
+        await expect(useCase.execute('uuid-payment-1', mockRequest)).rejects.toThrow('La fecha de pago es obligatoria si el estado es Pagado');
 
         expect(mockPaymentValidator.validatePaymentDate).toHaveBeenCalledWith('', 'Paid');
+        expect(mockPaymentRepository.update).not.toHaveBeenCalled();
     });
 
     it('NO debe llamar a validatePaymentDate si no se actualizan ni el estado ni la fecha de pago', async () => {

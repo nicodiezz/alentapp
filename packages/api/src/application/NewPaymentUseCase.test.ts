@@ -118,4 +118,26 @@ describe('CreatePaymentUseCase', () => {
         expect(mockMemberRepository.findById).not.toHaveBeenCalled();
         expect(mockPaymentRepository.create).not.toHaveBeenCalled();
     });
+
+    it('debe fallar si el estado es Pagado y no se envía la fecha de pago', async () => {
+        const mockRequest: CreatePaymentRequest = {
+            member_id: 'uuid-member-1',
+            amount: 2500,
+            month: 6,
+            year: 2026,
+            status: 'Paid',
+            due_date: '2026-06-30',
+            payment_date: undefined
+        };
+
+        vi.mocked(mockPaymentValidator.validatePaymentDate).mockImplementationOnce(() => {
+            throw new Error('La fecha de pago es obligatoria si el estado es Pagado');
+        });
+
+        await expect(useCase.execute(mockRequest)).rejects.toThrow('La fecha de pago es obligatoria si el estado es Pagado');
+
+        expect(mockPaymentValidator.validatePaymentDate).toHaveBeenCalledWith('', 'Paid');
+        expect(mockMemberRepository.findById).not.toHaveBeenCalled();
+        expect(mockPaymentRepository.create).not.toHaveBeenCalled();
+    });
 });
