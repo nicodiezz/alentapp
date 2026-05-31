@@ -35,6 +35,7 @@ export class LockerController {
             }
             if (
                 error.message.includes('requerido') ||
+                error.message.includes('requerida') ||
                 error.message.includes('debe ser')
             ) {
                 return reply.status(400).send({ error: error.message });
