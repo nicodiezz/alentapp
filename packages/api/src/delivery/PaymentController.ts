@@ -59,6 +59,9 @@ export class PaymentController {
             const payment = await this.getPaymentByIdUseCase.execute(request.params.id);
             return reply.status(200).send({ data: payment });
         } catch (error: any) {
+            if (error.message.includes('No existe')) {
+                return reply.status(404).send({ error: error.message });
+            }
             return reply.status(500).send({ error: 'Error interno, reintente más tarde' });
         }
     }
