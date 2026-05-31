@@ -17,7 +17,7 @@ export class LockerValidator {
         }
 
         if (data.location !== undefined && data.location.trim() === '') {
-            throw new Error('La ubicaciÃ³n es requerida');
+            throw new Error('La ubicación es requerida');
         }
     }
 
