@@ -11,7 +11,7 @@ export class CancelPaymentUseCase {
     async execute(id: string): Promise<PaymentDTO> {
         const existingPayment = await this.paymentRepo.findById(id);
         if (!existingPayment) {
-            throw new Error('El pago No existe');
+            throw new Error('No existe un pago con ese ID');
         }
 
         this.paymentValidator.cancelPayment(existingPayment.status);
