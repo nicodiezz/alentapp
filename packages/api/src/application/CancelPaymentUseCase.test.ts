@@ -47,7 +47,7 @@ describe('CancelPaymentUseCase', () => {
     it('debe propagar el error si el pago no existe', async () => {
         vi.mocked(mockPaymentRepository.findById).mockResolvedValueOnce(null);
 
-        await expect(useCase.execute('uuid-no-existe')).rejects.toThrow('El pago No existe');
+        await expect(useCase.execute('uuid-no-existe')).rejects.toThrow('No existe un pago con ese ID');
 
         expect(mockPaymentRepository.cancel).not.toHaveBeenCalled();
     });
