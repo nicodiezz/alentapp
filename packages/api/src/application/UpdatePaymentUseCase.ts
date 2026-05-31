@@ -39,6 +39,10 @@ export class UpdatePaymentUseCase {
             this.paymentValidator.validateDueDate(data.due_date);
         }
 
+        if (data.status) {
+            this.paymentValidator.validateStatus(data.status);
+        }
+
         //Obtengo el estado y la fecha de pago actuales
         const currentStatus = (data.status ?? existingPayment.status) as CreatePaymentStatus;
         const currentPaymentDate = data.payment_date ?? existingPayment.payment_date ?? '';
@@ -46,10 +50,6 @@ export class UpdatePaymentUseCase {
         //Valido que la fecha de pago sea correcta
         if (data.payment_date !== undefined || data.status !== undefined) {
             this.paymentValidator.validatePaymentDate(currentPaymentDate, currentStatus);
-        }
-
-        if (data.status) {
-            this.paymentValidator.validateStatus(data.status);
         }
 
         return this.paymentRepo.update(id, data);
