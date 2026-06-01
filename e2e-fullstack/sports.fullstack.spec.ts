@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import pg from 'pg';
+import crypto from 'crypto';
 
 /**
  * Tests E2E Full-Stack para la vista de Deportes.
@@ -7,11 +9,46 @@ import { test, expect } from '@playwright/test';
  *   - La API Fastify real en http://localhost:3001
  *   - La base de datos PostgreSQL de test (alentapp_test_db)
  *
- * El global-setup se encarga de limpiar la DB antes de correr la suite,
- * por lo que cada test empieza desde un estado conocido y limpio.
+ * Cada test limpia la tabla de deportes antes de ejecutarse para asegurar la independencia.
  */
 
+const DB_URL = 'postgresql://admin:password123@localhost:5433/alentapp_test_db';
+
+async function cleanSportsTable() {
+  const client = new pg.Client({ connectionString: DB_URL });
+  await client.connect();
+  try {
+    await client.query('TRUNCATE TABLE "sports" RESTART IDENTITY CASCADE');
+  } finally {
+    await client.end();
+  }
+}
+
+async function insertSport(name: string, description: string, capacity: number, price: number) {
+  const client = new pg.Client({ connectionString: DB_URL });
+  await client.connect();
+  try {
+    await client.query(
+      'INSERT INTO "sports" (id, name, description, max_capacity, additional_price, requires_medical_certificate) VALUES ($1, $2, $3, $4, $5, $6)',
+      [
+        crypto.randomUUID(),
+        name,
+        description,
+        capacity,
+        price,
+        false
+      ]
+    );
+  } finally {
+    await client.end();
+  }
+}
+
 test.describe('Sports Full-Stack E2E', () => {
+
+  test.beforeEach(async () => {
+    await cleanSportsTable();
+  });
 
   test('debe mostrar el estado vacío cuando no hay deportes en la DB', async ({ page }) => {
     await page.goto('/sports');
@@ -42,9 +79,12 @@ test.describe('Sports Full-Stack E2E', () => {
   });
 
   test('debe editar el deporte creado y ver el cambio en la tabla', async ({ page }) => {
+    // Insertar el deporte para que este test no dependa de que el anterior lo cree
+    await insertSport('Test E2E Fullstack Sport', 'Deporte creado por test e2e fullstack', 24, 1800);
+
     await page.goto('/sports');
 
-    // Esperar que el deporte del test anterior esté en la tabla
+    // Esperar que el deporte esté en la tabla
     await expect(page.getByText('Test E2E Fullstack Sport')).toBeVisible({ timeout: 10000 });
 
     // Clic en Editar
@@ -66,9 +106,12 @@ test.describe('Sports Full-Stack E2E', () => {
   });
 
   test('debe eliminar el deporte y mostrar el estado vacío', async ({ page }) => {
+    // Insertar el deporte para que este test no dependa de que el anterior lo cree o mantenga
+    await insertSport('Test E2E Fullstack Sport', 'Deporte creado por test e2e fullstack', 24, 1800);
+
     await page.goto('/sports');
 
-    // El deporte debería seguir ahí tras el test anterior
+    // El deporte debería estar en la tabla
     await expect(page.getByText('Test E2E Fullstack Sport')).toBeVisible({ timeout: 10000 });
 
     // Aceptar el confirm del navegador automáticamente
