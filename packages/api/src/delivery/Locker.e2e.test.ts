@@ -9,12 +9,19 @@ describe('Locker API End-to-End Tests', () => {
     let app: FastifyInstance;
     let prisma: PrismaClient;
     let testMemberId: string;
-    let createdLockerId: string;
 
     const randomSuffix = Math.floor(Math.random() * 100000).toString();
-    const testLockerNumber = 90000 + Math.floor(Math.random() * 9999);
     const testDni = `E2ELOCK${randomSuffix}`;
     const testEmail = `e2elocker${randomSuffix}@test.com`;
+
+    function randomLockerNumber() {
+        return 90000 + Math.floor(Math.random() * 9999);
+    }
+
+    async function createTestLocker(number: number, location = 'Vestuario E2E'): Promise<string> {
+        const locker = await prisma.locker.create({ data: { number, location } });
+        return locker.id;
+    }
 
     beforeAll(async () => {
         app = buildApp();
@@ -25,7 +32,6 @@ describe('Locker API End-to-End Tests', () => {
         });
         await prisma.$connect();
 
-        // Creamos un socio real en la DB para usarlo como FK en asignaciones
         const member = await prisma.member.create({
             data: {
                 name: 'Socio E2E Locker',
@@ -39,9 +45,6 @@ describe('Locker API End-to-End Tests', () => {
     });
 
     afterAll(async () => {
-        if (createdLockerId) {
-            await prisma.locker.deleteMany({ where: { id: createdLockerId } });
-        }
         if (testMemberId) {
             await prisma.member.deleteMany({ where: { id: testMemberId } });
         }
@@ -61,10 +64,8 @@ describe('Locker API End-to-End Tests', () => {
     });
 
     it('2. POST: Debe crear un casillero en la base de datos real', async () => {
-        const payload = {
-            number: testLockerNumber,
-            location: 'Vestuario E2E',
-        };
+        const lockerNumber = randomLockerNumber();
+        const payload = { number: lockerNumber, location: 'Vestuario E2E' };
 
         const response = await app.inject({
             method: 'POST',
@@ -76,46 +77,40 @@ describe('Locker API End-to-End Tests', () => {
         const body = JSON.parse(response.payload);
 
         expect(body.data.id).toBeDefined();
-        expect(body.data.number).toBe(testLockerNumber);
+        expect(body.data.number).toBe(lockerNumber);
         expect(body.data.location).toBe('Vestuario E2E');
         expect(body.data.status).toBe('Available');
 
-        createdLockerId = body.data.id;
-
-        // Verificación directa E2E: ¿Se guardó realmente en PostgreSQL?
-        const dbLocker = await prisma.locker.findUnique({ where: { id: createdLockerId } });
+        const dbLocker = await prisma.locker.findUnique({ where: { id: body.data.id } });
         expect(dbLocker).not.toBeNull();
-        expect(dbLocker?.number).toBe(testLockerNumber);
+        expect(dbLocker?.number).toBe(lockerNumber);
         expect(dbLocker?.location).toBe('Vestuario E2E');
+
+        await prisma.locker.delete({ where: { id: body.data.id } });
     });
 
     it('3. POST: Debe fallar con 409 si el número ya existe', async () => {
-        const payload = {
-            number: testLockerNumber,
-            location: 'Otra ubicación',
-        };
+        const lockerNumber = randomLockerNumber();
+        const lockerId = await createTestLocker(lockerNumber);
 
         const response = await app.inject({
             method: 'POST',
             url: '/api/v1/lockers',
-            payload,
+            payload: { number: lockerNumber, location: 'Otra ubicación' },
         });
 
         expect(response.statusCode).toBe(409);
         const body = JSON.parse(response.payload);
         expect(body.error).toBe('Ya existe un casillero con ese número');
+
+        await prisma.locker.delete({ where: { id: lockerId } });
     });
 
     it('4. POST: Debe fallar con 400 si la ubicación está vacía', async () => {
-        const payload = {
-            number: testLockerNumber + 1,
-            location: '',
-        };
-
         const response = await app.inject({
             method: 'POST',
             url: '/api/v1/lockers',
-            payload,
+            payload: { number: randomLockerNumber(), location: '' },
         });
 
         expect(response.statusCode).toBe(400);
@@ -124,34 +119,31 @@ describe('Locker API End-to-End Tests', () => {
     });
 
     it('5. PUT: Debe actualizar la ubicación del casillero', async () => {
-        const payload = {
-            location: 'Vestuario E2E Actualizado',
-        };
+        const lockerId = await createTestLocker(randomLockerNumber());
 
         const response = await app.inject({
             method: 'PUT',
-            url: `/api/v1/lockers/${createdLockerId}`,
-            payload,
+            url: `/api/v1/lockers/${lockerId}`,
+            payload: { location: 'Vestuario E2E Actualizado' },
         });
 
         expect(response.statusCode).toBe(200);
         const body = JSON.parse(response.payload);
         expect(body.data.location).toBe('Vestuario E2E Actualizado');
 
-        const dbLocker = await prisma.locker.findUnique({ where: { id: createdLockerId } });
+        const dbLocker = await prisma.locker.findUnique({ where: { id: lockerId } });
         expect(dbLocker?.location).toBe('Vestuario E2E Actualizado');
+
+        await prisma.locker.delete({ where: { id: lockerId } });
     });
 
     it('6. PUT: Debe asignar un miembro real al casillero', async () => {
-        const payload = {
-            member_id: testMemberId,
-            status: 'Occupied',
-        };
+        const lockerId = await createTestLocker(randomLockerNumber());
 
         const response = await app.inject({
             method: 'PUT',
-            url: `/api/v1/lockers/${createdLockerId}`,
-            payload,
+            url: `/api/v1/lockers/${lockerId}`,
+            payload: { member_id: testMemberId, status: 'Occupied' },
         });
 
         expect(response.statusCode).toBe(200);
@@ -159,28 +151,33 @@ describe('Locker API End-to-End Tests', () => {
         expect(body.data.member_id).toBe(testMemberId);
         expect(body.data.status).toBe('Occupied');
 
-        const dbLocker = await prisma.locker.findUnique({ where: { id: createdLockerId } });
+        const dbLocker = await prisma.locker.findUnique({ where: { id: lockerId } });
         expect(dbLocker?.member_id).toBe(testMemberId);
+
+        await prisma.locker.delete({ where: { id: lockerId } });
     });
 
     it('7. PUT: Debe fallar con 409 al asignar miembro a casillero en mantenimiento', async () => {
-        // Primero ponemos el casillero en mantenimiento (sin miembro)
+        const lockerId = await createTestLocker(randomLockerNumber());
+
+        // Poner en mantenimiento via API
         await app.inject({
             method: 'PUT',
-            url: `/api/v1/lockers/${createdLockerId}`,
+            url: `/api/v1/lockers/${lockerId}`,
             payload: { member_id: null, status: 'Maintenance' },
         });
 
-        // Intentamos asignar un miembro a un casillero en mantenimiento
         const response = await app.inject({
             method: 'PUT',
-            url: `/api/v1/lockers/${createdLockerId}`,
+            url: `/api/v1/lockers/${lockerId}`,
             payload: { member_id: testMemberId },
         });
 
         expect(response.statusCode).toBe(409);
         const body = JSON.parse(response.payload);
         expect(body.error).toBe('No se puede asignar un casillero en mantenimiento');
+
+        await prisma.locker.delete({ where: { id: lockerId } });
     });
 
     it('8. PUT: Debe fallar con 404 si el casillero no existe', async () => {
@@ -196,24 +193,17 @@ describe('Locker API End-to-End Tests', () => {
     });
 
     it('9. DELETE: Debe eliminar el casillero existente', async () => {
-        // Quitamos el status Maintenance para poder eliminar sin problemas
-        await app.inject({
-            method: 'PUT',
-            url: `/api/v1/lockers/${createdLockerId}`,
-            payload: { status: 'Available', member_id: null },
-        });
+        const lockerId = await createTestLocker(randomLockerNumber());
 
         const response = await app.inject({
             method: 'DELETE',
-            url: `/api/v1/lockers/${createdLockerId}`,
+            url: `/api/v1/lockers/${lockerId}`,
         });
 
         expect(response.statusCode).toBe(204);
 
-        const dbLocker = await prisma.locker.findUnique({ where: { id: createdLockerId } });
+        const dbLocker = await prisma.locker.findUnique({ where: { id: lockerId } });
         expect(dbLocker).toBeNull();
-
-        createdLockerId = '';
     });
 
     it('10. DELETE: Debe fallar con 404 si el casillero no existe', async () => {
