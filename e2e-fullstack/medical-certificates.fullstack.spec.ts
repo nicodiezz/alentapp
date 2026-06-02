@@ -57,10 +57,31 @@ test.describe('Medical Certificates Full-Stack E2E', () => {
     });
 
     test('debe editar el certificado médico creado y ver el cambio en la tabla', async ({ page }) => {
+        // Crea el miembro
+        await page.goto('/members');
+        await page.getByRole('button', { name: /Agregar Miembro/i }).click();
+        await expect(page.getByText(/Agregar Nuevo Miembro/i)).toBeVisible();
+        await page.getByPlaceholder(/Juan Pérez/i).fill('Socio Edit E2E');
+        await page.getByPlaceholder(/12345678/i).fill('77111222');
+        await page.getByPlaceholder(/correo\.com/i).fill('edit-e2e@test.com');
+        await page.getByLabel(/Fecha de Nacimiento/i).fill('1995-06-15');
+        await page.getByRole('button', { name: /Crear Miembro/i }).click();
+        await expect(page.getByText('Socio Edit E2E').first()).toBeVisible({ timeout: 10000 });
+
+        // Crea el certificado
         await page.goto('/medical-certificates');
+        await page.getByRole('button', { name: /Registrar Certificado Medico/i }).click();
+        await expect(page.getByText(/Agregar Certificado Medico/i)).toBeVisible();
+        await page.getByLabel(/Fecha de Emision/i).fill('2026-01-01');
+        await page.getByLabel(/Fecha de Vencimiento/i).fill('2026-12-31');
+        await page.getByPlaceholder(/MP 12345/i).fill('MP-EDIT-BASE');
+        await page.getByText(/Seleccione un miembro/i).click();
+        await page.getByText('Socio Edit E2E').last().click();
+        await page.getByRole('button', { name: /Crear Certificado/i }).click();
 
         await expect(page.getByText('MP-E2E-001')).toBeVisible({ timeout: 10000 });
 
+        // Edita el Certificado
         await page.getByRole('button', { name: /Editar certificado/i }).first().click();
         await expect(page.getByText(/Editar Certificado Medico/i)).toBeVisible();
 
