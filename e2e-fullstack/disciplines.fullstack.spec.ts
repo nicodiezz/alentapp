@@ -77,7 +77,7 @@ test.describe('Disciplines Full-Stack E2E', () => {
     testMemberId = await insertMember();
   });
 
-  test.afterAll(async () => {
+  test.afterEach(async () => {
     await cleanupTestData();
   });
 
