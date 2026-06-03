@@ -1,0 +1,9 @@
+# 1.1 Analizar la infraestructura Docker actual
+
+| Problema | ¿Dónde ocurre? | Impacto | Solución propuesta |
+| --- | --- | --- | --- |
+| La API y el frontend no usan construcción multistage: instalan todas las dependencias, incluyendo las de desarrollo y conservan Node.js en la imagen final | `packages/api/Dockerfile` y `packages/web/Dockerfile` | Medio | Usar `multi-stage builds`. Para la API, copiar únicamente dist/ y las dependencias productivas a la imagen final. Para el frontend, copiar únicamente dist/ y servir los archivos estáticos con Nginx en lugar de Node.js |
+| Ningún servicio define límites de CPU ni memoria | `docker-compose.yml`: servicios `api`, `web` y `db` | Medio | Agregar un bloque `deploy.resources.limits` a cada servicio con valores apropiados para evitar que un contenedor consuma todos los recursos del host |
+| Los contenedores de API y frontend ejecutan sus procesos como `root` debido a que no se define un usuario no privilegiado | `packages/api/Dockerfile` y `packages/web/Dockerfile`: ausencia de instrucción `USER` | Alto | Ejecutar los procesos con un usuario no-root en las imágenes finales |
+| Las credenciales de PostgreSQL están hardcodeadas y se repiten dentro de `DATABASE_URL` | `docker-compose.yml` :líneas 6, 7, 8 y 30 | Alto | Externalizar los valores sensibles a un archivo `.env` excluido del repositorio y referenciar las variables dentro del `docker-compose` con la sintaxis `${VARIABLE}`|
+| La API y el frontend no definen `healthchecks` | `docker-compose.yml`: servicios `api` y `web` | Medio | Agregar un healthcheck para la API contra un endpoint como `http://localhost:3000/health` y otro para el frontend contra `http://localhost:80/` |
