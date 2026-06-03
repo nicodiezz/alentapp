@@ -1,4 +1,12 @@
-# 1.1 Analizar la infraestructura Docker actual
+## Fase 1: Analizar y proponer
+
+**Usuario:** Barbé Dante
+**Fecha:** 03/06/2026  
+**Actividad:** TP Integrador - Actividad 4: Preparando para Producción
+
+---
+
+## 1.1 Analizar la infraestructura Docker actual
 
 | Problema | ¿Dónde ocurre? | Impacto | Solución propuesta |
 | --- | --- | --- | --- |
@@ -8,15 +16,15 @@
 | Las credenciales de PostgreSQL están hardcodeadas y se repiten dentro de `DATABASE_URL` | `docker-compose.yml` :líneas 6, 7, 8 y 30 | Alto | Externalizar los valores sensibles a un archivo `.env` excluido del repositorio y referenciar las variables dentro del `docker-compose` con la sintaxis `${VARIABLE}`|
 | La API y el frontend no definen `healthchecks` | `docker-compose.yml`: servicios `api` y `web` | Medio | Agregar un healthcheck para la API contra un endpoint como `http://localhost:3000/health` y otro para el frontend contra `http://localhost:80/` |
 
-# 1.2 Investigar OpenTelemetry
+## 1.2 Investigar OpenTelemetry
 
-## ¿Qué es OpenTelemetry y cómo se diferencia de Prometheus?
+### ¿Qué es OpenTelemetry y cómo se diferencia de Prometheus?
 OpenTelemetry es un framework de observabilidad, un conjunto de herramientas diseñado para crear y gestionar datos de telemetría como pueden ser trazas, métricas y logs.
 La observabilidad es la capacidad para comprender el estado interno de un sistema a través del análisis de sus resultados.
 
 La principal diferencia es que OpenTelemetry proporciona herramientas para generar, recolectar y exportar datos de telemetría, mientras que Prometheus está orientado a recolectar, almacenar y consultar métricas. Ambas herramientas pueden complementarse: OpenTelemetry genera y exporta las métricas de la aplicación, mientras que Prometheus las recolecta y almacena para su posterior consulta.
 
-## ¿Cuáles son los "3 pilares" de la observabilidad? ¿Cuál aborda OpenTelemetry?
+### ¿Cuáles son los "3 pilares" de la observabilidad? ¿Cuál aborda OpenTelemetry?
 Los `3 pilares` de la observabilidad son:
 - Trazas
 - Métricas
@@ -30,7 +38,7 @@ Un `log` es un registro con marca de tiempo emitido por servicios u otros compon
 
 OpenTelemetry aborda las tres señales ya que permite unificar métricas, logs y trazas en un solo estándar.
 
-## Expliquen el concepto de métricas RED (rate, errors, duration). ¿Para qué sirve cada una?
+### Expliquen el concepto de métricas RED (rate, errors, duration). ¿Para qué sirve cada una?
 Las métricas RED permiten analizar el comportamiento de cada servicio de una aplicación a partir de tres aspectos:
 - Rate (cantidad de solicitudes recibidas por segundo)
 - Errors (cantidad o porcentaje de solicitudes que fallan)
@@ -40,12 +48,12 @@ La tasa de solicitudes permite conocer el nivel de tráfico y detectar aumentos 
 
 Estas métricas se miden para cada servicio que procesa solicitudes, lo que proporciona una visión clara y coherente de su comportamiento y facilita la detección de problemas.
 
-## ¿Qué es el OTLP (OpenTelemetry Protocol)? ¿Qué ventaja tiene frente a exportar directamente a Prometheus?
+### ¿Qué es el OTLP (OpenTelemetry Protocol)? ¿Qué ventaja tiene frente a exportar directamente a Prometheus?
 OTLP es un protocolo de entrega de datos de telemetría de uso general diseñado en el marco del proyecto OpenTelemetry. Define la codificación, el transporte y el mecanismo de entrega de datos de telemetría (trazas, métricas y logs) entre fuentes de telemetría, nodos intermedios y backends de observabilidad.
 
 Su principal ventaja frente a exportar directamente a Prometheus es que permite desacoplar la aplicación de una herramienta específica, la aplicación envía los datos a un `Collector` y este se encarga de reenviarlos a Prometheus o a otro destino deseado.
 
-## ¿Cómo se relaciona OpenTelemetry con Grafana?
+### ¿Cómo se relaciona OpenTelemetry con Grafana?
 OpenTelemetry proporciona herramientas para generar, recolectar y exportar datos de telemetría.
 Grafana permite analizar y visualizar esos datos mediante gráficos y dashboards. 
 Ambas herramientas se complementan ya que OpenTelemetry se encarga de obtener y enviar la información sobre el comportamiento de la aplicación, mientras que Grafana ayuda a interpretarla visualmente.
