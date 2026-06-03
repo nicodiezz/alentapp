@@ -9,7 +9,6 @@ describe('Discipline API End-to-End Tests', () => {
     let app: FastifyInstance;
     let prisma: PrismaClient;
     let testMemberId: string;
-    let createdDisciplineId: string;
 
     const randomSuffix = Math.floor(Math.random() * 100000).toString();
     const testDni = `E2EDISC${randomSuffix}`;
@@ -24,7 +23,6 @@ describe('Discipline API End-to-End Tests', () => {
         });
         await prisma.$connect();
 
-        // Creamos un socio real en la DB para usarlo como FK en las suspensiones
         const member = await prisma.member.create({
             data: {
                 name: 'Socio E2E Discipline',
@@ -38,12 +36,8 @@ describe('Discipline API End-to-End Tests', () => {
     });
 
     afterAll(async () => {
-        if (createdDisciplineId) {
-            await prisma.discipline.deleteMany({ where: { id: createdDisciplineId } });
-        }
-        if (testMemberId) {
-            await prisma.member.deleteMany({ where: { id: testMemberId } });
-        }
+        await prisma.discipline.deleteMany({ where: { member_id: testMemberId } });
+        await prisma.member.deleteMany({ where: { id: testMemberId } });
         await prisma.$disconnect();
         await app.close();
     });
@@ -81,12 +75,12 @@ describe('Discipline API End-to-End Tests', () => {
         expect(body.data.reason).toBe('Suspension E2E');
         expect(body.data.member_id).toBe(testMemberId);
 
-        createdDisciplineId = body.data.id;
-
         // Verificación directa E2E: ¿Se guardó realmente en PostgreSQL?
-        const dbDiscipline = await prisma.discipline.findUnique({ where: { id: createdDisciplineId } });
+        const dbDiscipline = await prisma.discipline.findUnique({ where: { id: body.data.id } });
         expect(dbDiscipline).not.toBeNull();
         expect(dbDiscipline?.reason).toBe('Suspension E2E');
+
+        await prisma.discipline.delete({ where: { id: body.data.id } });
     });
 
     it('3. POST: Debe fallar con 404 si el miembro indicado no existe en la DB real', async () => {
@@ -150,13 +144,21 @@ describe('Discipline API End-to-End Tests', () => {
     });
 
     it('6. PUT: Debe actualizar una suspension existente', async () => {
-        const payload = {
-            reason: 'Suspension E2E Actualizada',
-        };
+        const discipline = await prisma.discipline.create({
+            data: {
+                reason: 'Suspension para actualizar',
+                issue_date: new Date('2026-06-01'),
+                expiry_date: new Date('2026-08-01'),
+                is_total_suspension: false,
+                member_id: testMemberId,
+            },
+        });
+
+        const payload = { reason: 'Suspension E2E Actualizada' };
 
         const response = await app.inject({
             method: 'PUT',
-            url: `/api/v1/disciplines/${createdDisciplineId}`,
+            url: `/api/v1/disciplines/${discipline.id}`,
             payload,
         });
 
@@ -164,8 +166,10 @@ describe('Discipline API End-to-End Tests', () => {
         const body = JSON.parse(response.payload);
         expect(body.data.reason).toBe('Suspension E2E Actualizada');
 
-        const dbDiscipline = await prisma.discipline.findUnique({ where: { id: createdDisciplineId } });
+        const dbDiscipline = await prisma.discipline.findUnique({ where: { id: discipline.id } });
         expect(dbDiscipline?.reason).toBe('Suspension E2E Actualizada');
+
+        await prisma.discipline.delete({ where: { id: discipline.id } });
     });
 
     it('7. PUT: Debe fallar con 404 si la suspension no existe', async () => {
@@ -181,17 +185,25 @@ describe('Discipline API End-to-End Tests', () => {
     });
 
     it('8. DELETE: Debe eliminar una suspension existente', async () => {
+        const discipline = await prisma.discipline.create({
+            data: {
+                reason: 'Suspension para eliminar',
+                issue_date: new Date('2026-06-01'),
+                expiry_date: new Date('2026-08-01'),
+                is_total_suspension: false,
+                member_id: testMemberId,
+            },
+        });
+
         const response = await app.inject({
             method: 'DELETE',
-            url: `/api/v1/disciplines/${createdDisciplineId}`,
+            url: `/api/v1/disciplines/${discipline.id}`,
         });
 
         expect(response.statusCode).toBe(204);
 
-        const dbDiscipline = await prisma.discipline.findUnique({ where: { id: createdDisciplineId } });
+        const dbDiscipline = await prisma.discipline.findUnique({ where: { id: discipline.id } });
         expect(dbDiscipline).toBeNull();
-        
-        createdDisciplineId = '';
     });
 
     it('9. DELETE: Debe fallar con 404 si la suspension no existe', async () => {
