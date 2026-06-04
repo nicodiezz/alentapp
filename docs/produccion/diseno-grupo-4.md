@@ -139,19 +139,7 @@ La imagen `node:22-alpine` ya trae el usuario `node`, pero se crea un usuario de
 
 ##### Healthcheck
 
-```dockerfile
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
-```
-
-| Parámetro | Valor | Justificación |
-|-----------|-------|---------------|
-| `--interval` | 30s | Balance entre detectar fallos rápidamente y no generar overhead excesivo de red |
-| `--timeout` | 5s | Si la API no responde en 5 segundos, se considera caída |
-| `--start-period` | 10s | Fastify necesita tiempo para bootstrapping; durante este período los fallos no cuentan |
-| `--retries` | 3 | Tolerancia a fallos transitorios (pico de CPU, GC, etc.) |
-
-Se utiliza `GET /` (la ruta raíz existente en `app.ts:211`) para no requerir cambios en el código de la aplicación. Se usa `wget` en lugar de `curl` porque Alpine incluye `wget` por defecto pero no `curl`.
+Se configura un healthcheck que verifica periódicamente si la API está respondiendo. Se realiza un `GET` a la ruta raíz (`localhost:3000/`) cada 30 segundos, con un timeout de 5 segundos y 3 reintentos antes de marcar el contenedor como `unhealthy`. Se incluye un período de gracia de 10 segundos al inicio para darle tiempo a Fastify a levantarse. Se usa `wget` en lugar de `curl` porque Alpine lo incluye por defecto.
 
 ##### Exclusión de herramientas de build
 
@@ -198,12 +186,12 @@ playwright-report*
 
 | Requisito | Cómo se cumple |
 |-----------|---------------|
-| **Tamaño de imagen < 400MB** | Multi-stage build descarta etapas de build. Alpine como base (~50MB). `npm ci --omit=dev` elimina ~70% de dependencias. `.dockerignore` excluye archivos innecesarios |
-| **Tiempo de startup < 5 segundos** | JavaScript compilado con `tsc` (sin transpilación on-the-fly). Node ejecuta `.js` nativamente sin overhead de tsx |
-| **Seguridad** | Usuario `appuser` no-root. Sin herramientas de build en imagen final. Sin source maps. Secrets vía env vars |
+| **Tamaño de imagen reducido** | Multi-stage build descarta etapas de build. Alpine como base. Solo dependencias de producción en la imagen final |
+| **Tiempo de startup bajo** | JavaScript compilado con `tsc`. Node ejecuta `.js` nativamente sin overhead de transpilación |
+| **Seguridad** | Usuario `appuser` no-root. Sin herramientas de build en imagen final. Secrets vía env vars |
 | **Reproducibilidad** | `npm ci` con lockfile (determinista). Multi-stage build idempotente |
-| **Mantenibilidad** | Etapas con nombres semánticos (`deps`, `build`, `runtime`). `.dockerignore` completo. Comentarios en el Dockerfile |
-| **Compatibilidad hexagonal** | La imagen contiene el código compilado de todas las capas de arquitectura hexagonal (domain, application, delivery, infrastructure) sin acoplar a ningún adaptador específico. Los puertos (interfaces) se mantienen como contratos, los adaptadores de infraestructura (Postgres*) se incluyen como implementaciones intercambiables |
+| **Mantenibilidad** | Etapas con nombres semánticos (`deps`, `build`, `runtime`). `.dockerignore` completo |
+| **Compatibilidad hexagonal** | La imagen contiene el código compilado de todas las capas de arquitectura hexagonal sin acoplar a ningún adaptador específico |
 
 ---
 
