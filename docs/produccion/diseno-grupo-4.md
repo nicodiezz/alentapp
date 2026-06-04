@@ -217,6 +217,220 @@ Para que el Dockerfile funcione, se requieren los siguientes archivos adicionale
 
 ---
 
+### c) Diseño de `docker-compose.prod.yml`
+
+#### Propósito
+
+El archivo `docker-compose.prod.yml` orquesta los servicios de producción de Alentapp (API, frontend y base de datos) en un único stack Docker Compose.
+
+**Por qué es necesario:** El archivo `docker-compose.yml` existente está orientado a desarrollo: no define límites de recursos, no aplica medidas de seguridad (ejecución como root, red default de Docker), no configura rotación de logs y expone variables sensibles. El compose de producción resuelve estos problemas incorporando resource limits, hardening de seguridad, red interna aislada, logging con rotación y secrets externos.
+
+**Contexto de ejecución:** El archivo se ejecuta desde la raíz del monorepo con:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Se requerirá un archivo `.env` en la raíz del monorepo con las credenciales de base de datos. Las imágenes de API y frontend se construyen desde sus respectivos `Dockerfile.prod`:
+
+```bash
+docker build -f packages/api/Dockerfile.prod -t alentapp-api:prod .
+docker build -f packages/web/Dockerfile.prod -t alentapp-web:prod .
+```
+
+---
+
+#### Estructura
+
+El compose define **3 servicios** con dependencias ordenadas: `db` arranca primero, `api` espera a que `db` esté healthy, y `web` espera a que `api` esté healthy.
+
+##### Tabla de servicios
+
+| Servicio | Imagen | Puerto expuesto | Propósito |
+|----------|--------|-----------------|-----------|
+| `db` | `postgres:16-alpine` | — (solo red interna) | Persistencia de datos PostgreSQL |
+| `api` | `packages/api/Dockerfile.prod` | 3000 | Endpoints REST de la aplicación |
+| `web` | `packages/web/Dockerfile.prod` | 80 | Frontend compilado servido con Nginx |
+
+#### Detalle de cada servicio:
+**Servicio `db`**
+
+Responsable de la persistencia de datos de la aplicación.
+
+Características principales:
+
+* Imagen base `postgres:16-alpine`.
+* Volumen persistente (`pgdata`) para almacenar los datos entre reinicios y actualizaciones.
+* Variables de configuración (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`) obtenidas desde `.env`.
+* Healthcheck con `pg_isready` para bloquear el inicio de la API hasta que la base de datos esté lista.
+* Conectado únicamente a la red interna `app-network`, sin exposición al host.
+
+**Servicio `api`**
+
+Responsable de exponer los endpoints REST de la aplicación.
+
+Características principales:
+
+* Imagen construida desde `packages/api/Dockerfile.prod`.
+* Exposición del puerto 3000.
+* Dependencia de `db` mediante `condition: service_healthy` para evitar arrancar antes de que la base de datos acepte conexiones.
+* Variables sensibles (`DATABASE_URL`, etc.) obtenidas desde `.env`.
+* Healthcheck HTTP contra `GET /health`.
+* Ejecución con usuario no privilegiado (`appuser`, UID 1001), definido en el Dockerfile.
+* Sistema de archivos configurado como solo lectura (`read_only: true`).
+
+**Servicio `web`**
+
+Responsable de servir el frontend compilado mediante Nginx.
+
+Características principales:
+
+* Imagen construida desde `packages/web/Dockerfile.prod`.
+* Exposición del puerto 80.
+* Dependencia de `api` mediante `condition: service_healthy`.
+* Healthcheck HTTP contra `localhost:80`.
+* Configuración de compresión gzip y caché de assets estáticos gestionada por Nginx.
+* Sistema de archivos configurado como solo lectura.
+
+---
+
+#### Resource Limits
+
+Cada servicio tiene límites explícitos de CPU y memoria para evitar el consumo excesivo de recursos del host y mejorar la estabilidad del sistema ante picos de carga.
+
+| Servicio | CPU | Memoria |
+|----------|-----|---------|
+| `api` | 0.5 CPU | 512 MB |
+| `web` | 0.25 CPU | 128 MB |
+| `db` | 1 CPU | 1 GB |
+
+Los valores fueron estimados considerando que Alentapp es una aplicación web monolítica compuesta por una API Fastify, un frontend React servido por Nginx y una base de datos PostgreSQL. No incorpora componentes de alto consumo como microservicios, sistemas de mensajería o tareas de cómputo intensivo. Los límites propuestos se consideran suficientes y serán validados durante la fase de implementación.
+
+---
+
+#### Healthchecks
+
+Se configuran verificaciones automáticas para detectar fallos y asegurar que los servicios estén operativos antes de aceptar tráfico o de que los servicios dependientes arranquen.
+
+**API:**
+
+```yaml
+healthcheck:
+  test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 10s
+```
+
+| Parámetro | Valor | Justificación |
+|-----------|-------|---------------|
+| `interval` | 30s | Balance entre detectar fallos rápidamente y el rendimiento |
+| `timeout` | 5s | Si la API no responde en 5 segundos, se considera caída |
+| `start_period` | 10s | Fastify necesita tiempo de arranque; los fallos durante este período no cuentan |
+| `retries` | 3 | Tolerancia a fallos transitorios |
+
+**DB:**
+
+```yaml
+healthcheck:
+  test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+  interval: 10s
+  timeout: 5s
+  retries: 5
+  start_period: 5s
+```
+
+| Parámetro | Valor | Justificación |
+|-----------|-------|---------------|
+| `interval` | 10s | PostgreSQL tarda menos en estar listo; se verifica más frecuentemente |
+| `timeout` | 5s | `pg_isready` es casi instantáneo; 5s es margen suficiente |
+| `retries` | 5 | PostgreSQL puede tardar en inicializar el directorio de datos en el primer arranque |
+
+---
+
+#### Seguridad
+
+Se aplican las siguientes medidas de endurecimiento en los servicios `api` y `web`:
+
+```yaml
+security_opt:
+  - no-new-privileges:true
+read_only: true
+cap_drop:
+  - ALL
+cap_add:
+  - NET_BIND_SERVICE
+```
+
+| Medida | Justificación |
+|--------|---------------|
+| `read_only: true` | Impide que un proceso comprometido modifique el sistema de archivos del contenedor |
+| `cap_drop: ALL` | Elimina todas las Linux capabilities del kernel; el proceso no puede montar filesystems, cambiar IDs de usuario, hacer ping ICMP, etc. |
+| `cap_add: NET_BIND_SERVICE` | Se agrega únicamente cuando el servicio necesita bindear puertos < 1024 (Nginx en el puerto 80) |
+| `no-new-privileges: true` | Impide que el proceso o sus hijos adquieran privilegios adicionales vía `setuid`/`setgid` |
+| Usuario no-root | `api` corre con `appuser` (UID 1001), definido en el Dockerfile; si un atacante compromete la aplicación, solo obtiene acceso de usuario normal |
+
+---
+
+#### Logging
+
+Todos los servicios utilizan el driver `json-file` con rotación automática:
+
+```yaml
+logging:
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+```
+
+Esta configuración retiene hasta 30MB de logs por servicio y evita el crecimiento ilimitado de archivos en disco, reduciendo el riesgo de que el host se quede sin espacio en producción.
+
+---
+
+#### Red
+
+Se define una red bridge personalizada (`app-network`) para aislar los servicios de otras redes Docker presentes en el host:
+
+```yaml
+networks:
+  app-network:
+    driver: bridge
+```
+
+Todos los servicios se comunican exclusivamente a través de esta red interna. El servicio `db` no expone ningún puerto al host; solo es accesible desde `api` dentro de `app-network`.
+
+---
+
+#### Secrets
+
+Las credenciales y variables sensibles no están hardcodeadas en el repositorio. Se utiliza un archivo `.env` (excluido del control de versiones vía `.gitignore`) para almacenar:
+
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_DB`
+- `DATABASE_URL`
+
+Los servicios obtienen estos valores mediante la directiva `env_file: .env`. Esto facilita la rotación de credenciales entre entornos sin modificar el código fuente.
+
+---
+
+#### Requisitos no funcionales
+
+| Requisito | Objetivo |
+|-----------|----------|
+| Disponibilidad | Healthchecks activos para API y DB; `web` y `api` no arrancan hasta que sus dependencias estén healthy |
+| Seguridad | Usuario no-root, filesystem de solo lectura y capabilities mínimas en todos los servicios |
+| Configuración | Variables sensibles externas al repositorio |
+| Aislamiento | Debe usar una red bridge personalizada; `db` no debe exponer puertos al host |
+| Logging | Rotación automática de logs |
+| Consumo de recursos | Límites de CPU y memoria definidos por servicio para proteger el host |
+| Persistencia | Los datos de la base de datos deben persistir ante reinicios o recreación de contenedores. |
+| Mantenibilidad | Separación completa entre entorno de desarrollo (`docker-compose.yml`) y producción (`docker-compose.prod.yml`) |
+
+---
+
 ## 2.2. Diseño de la observabilidad
 
 ### a) Métricas RED a capturar
