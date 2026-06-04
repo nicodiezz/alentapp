@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import pg from 'pg';
+import crypto from 'crypto';
 
 /**
  * Tests E2E Full-Stack para la vista de Casilleros.
@@ -7,15 +9,47 @@ import { test, expect } from '@playwright/test';
  *   - La API Fastify real en http://localhost:3001
  *   - La base de datos PostgreSQL de test (alentapp_test_db)
  *
- * El global-setup se encarga de limpiar la DB antes de correr la suite,
- * por lo que cada test empieza desde un estado conocido y limpio.
+ * Cada test limpia la tabla de casilleros antes de ejecutarse para asegurar la independencia.
  */
+
+const DB_URL = 'postgresql://admin:password123@localhost:5433/alentapp_test_db';
 
 const TEST_LOCKER_NUMBER = 99901;
 const TEST_LOCKER_LOCATION = 'Vestuario Test E2E Fullstack';
 const UPDATED_LOCATION = 'Vestuario Test E2E Fullstack Editado';
 
+async function cleanLockersTable() {
+    const client = new pg.Client({ connectionString: DB_URL });
+    await client.connect();
+    try {
+        await client.query('TRUNCATE TABLE "lockers" RESTART IDENTITY CASCADE');
+    } finally {
+        await client.end();
+    }
+}
+
+async function insertLocker(number: number, location: string) {
+    const client = new pg.Client({ connectionString: DB_URL });
+    await client.connect();
+    try {
+        await client.query(
+            'INSERT INTO "lockers" (id, number, location, status) VALUES ($1, $2, $3, $4)',
+            [crypto.randomUUID(), number, location, 'Available']
+        );
+    } finally {
+        await client.end();
+    }
+}
+
 test.describe('Lockers Full-Stack E2E', () => {
+
+    test.beforeEach(async () => {
+        await cleanLockersTable();
+    });
+
+    test.afterEach(async () => {
+        await cleanLockersTable();
+    });
 
     test('debe mostrar el estado vacío cuando no hay casilleros en la DB', async ({ page }) => {
         await page.goto('/lockers');
@@ -44,9 +78,12 @@ test.describe('Lockers Full-Stack E2E', () => {
     });
 
     test('debe editar el casillero creado y ver el cambio en la tabla', async ({ page }) => {
+        // Insertar el casillero para que este test no dependa de que el anterior lo cree
+        await insertLocker(TEST_LOCKER_NUMBER, TEST_LOCKER_LOCATION);
+
         await page.goto('/lockers');
 
-        // Esperar que el casillero del test anterior esté en la tabla
+        // Esperar que el casillero esté en la tabla
         await expect(page.getByText(TEST_LOCKER_LOCATION)).toBeVisible({ timeout: 10000 });
 
         // Clic en Editar
@@ -66,10 +103,13 @@ test.describe('Lockers Full-Stack E2E', () => {
     });
 
     test('debe eliminar el casillero y mostrar el estado vacío', async ({ page }) => {
+        // Insertar el casillero para que este test no dependa de que el anterior lo cree o mantenga
+        await insertLocker(TEST_LOCKER_NUMBER, TEST_LOCKER_LOCATION);
+
         await page.goto('/lockers');
 
-        // El casillero editado debería seguir ahí
-        await expect(page.getByText(UPDATED_LOCATION)).toBeVisible({ timeout: 10000 });
+        // El casillero debería estar en la tabla
+        await expect(page.getByText(TEST_LOCKER_LOCATION)).toBeVisible({ timeout: 10000 });
 
         // Aceptar el confirm del navegador automáticamente
         page.on('dialog', (dialog) => dialog.accept());
