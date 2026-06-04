@@ -1,4 +1,4 @@
-# Diseño de Infraestructura Docker — Producción
+# Fase 2: Especificar y diseñar
 
 **Grupo:** 4  
 **Fecha:** 04/06/2026  
@@ -6,11 +6,11 @@
 
 ---
 
----
+## 2.1. Diseño de la infraestrutura Docker
 
-## Diseño de `packages/api/Dockerfile.prod`
+### a) Diseño de `packages/api/Dockerfile.prod`
 
-### Propósito
+#### Propósito
 
 `packages/api/Dockerfile.prod` es el Dockerfile que genera la imagen de producción del backend de Alentapp. Su objetivo es producir una imagen mínima, segura y optimizada que contenga solo lo necesario para ejecutar la API (Fastify + Prisma) en un entorno productivo.
 
@@ -31,11 +31,11 @@ El `context: .` es necesario porque el monorepo contiene:
 
 ---
 
-### Estructura: Multi-stage build con 3 etapas
+#### Estructura: Multi-stage build con 3 etapas
 
 El Dockerfile se compone de **3 etapas secuenciales**, cada una con una responsabilidad única. Las etapas anteriores proveen insumos a las siguientes, y solo la última genera la imagen final.
 
-#### Tabla de etapas
+##### Tabla de etapas
 
 | Etapa | Nombre | Base | Propósito |
 |-------|--------|------|-----------|
@@ -43,7 +43,7 @@ El Dockerfile se compone de **3 etapas secuenciales**, cada una con una responsa
 | Stage 2 | `build` | `node:22-alpine` | Compilar TypeScript, generar Prisma Client |
 | Stage 3 | `runtime` | `node:22-alpine` | Solo runtime: JS compilado + node_modules prod + usuario no-root |
 
-#### Detalle de cada etapa
+##### Detalle de cada etapa
 
 **Stage 1 — `deps`**
 
@@ -109,7 +109,7 @@ CMD ["node", "dist/packages/api/src/app.js"]
 
 ---
 
-### Capas y ordenamiento para cache
+#### Capas y ordenamiento para cache
 
 El orden de las capas en cada etapa está diseñado para maximizar la reutilización del cache de Docker:
 
@@ -121,9 +121,9 @@ Esto significa que en builds consecutivos donde solo cambia código fuente (no d
 
 ---
 
-### Seguridad
+#### Seguridad
 
-#### Usuario no-root
+##### Usuario no-root
 
 ```dockerfile
 RUN addgroup --system --gid 1001 appgroup && \
@@ -137,7 +137,7 @@ La imagen `node:22-alpine` ya trae el usuario `node`, pero se crea un usuario de
 - Cumplir el principio de mínimo privilegio
 - Si un atacante compromete la aplicación, solo obtiene acceso de usuario normal, no root
 
-#### Healthcheck
+##### Healthcheck
 
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
@@ -153,7 +153,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 Se utiliza `GET /` (la ruta raíz existente en `app.ts:211`) para no requerir cambios en el código de la aplicación. Se usa `wget` en lugar de `curl` porque Alpine incluye `wget` por defecto pero no `curl`.
 
-#### Exclusión de herramientas de build
+##### Exclusión de herramientas de build
 
 La imagen runtime **no contiene**:
 
@@ -165,7 +165,7 @@ La imagen runtime **no contiene**:
 
 Esto se logra porque las etapas `deps` y `build` se descartan: solo se copia el resultado compilado (`dist/`) a la etapa `runtime`.
 
-#### .dockerignore
+##### .dockerignore
 
 ```dockerignore
 node_modules
@@ -194,7 +194,7 @@ playwright-report*
 
 ---
 
-### Requisitos no funcionales
+#### Requisitos no funcionales
 
 | Requisito | Cómo se cumple |
 |-----------|---------------|
@@ -207,7 +207,7 @@ playwright-report*
 
 ---
 
-### Archivos complementarios necesarios
+#### Archivos complementarios necesarios
 
 Para que el Dockerfile funcione, se requieren los siguientes archivos adicionales:
 
