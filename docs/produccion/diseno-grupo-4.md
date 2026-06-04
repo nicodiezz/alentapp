@@ -204,6 +204,200 @@ Para que el Dockerfile funcione, se requieren los siguientes archivos adicionale
 
 ---
 
+
+---
+
+### b) Diseño de `packages/web/Dockerfile.prod`
+
+#### Propósito
+
+`packages/web/Dockerfile.prod` es el Dockerfile que genera la imagen de producción del frontend de Alentapp. Su objetivo es producir una imagen mínima y optimizada que sirva los assets estáticos compilados por Vite a través de Nginx, con compresión gzip, caché de assets y security headers.
+
+**Por qué es necesario:** El Dockerfile actual (`packages/web/Dockerfile`) es un build de una sola etapa orientado a desarrollo. Incluye Node.js, todas las devDependencies (Vite, TypeScript, React), y ejecuta el servidor de desarrollo de Vite en lugar de servir assets estáticos compilados. Esto genera una imagen de 570MB con herramientas innecesarias. En producción, el Dockerfile resuelve estos problemas mediante multi-stage builds, eliminando completamente Node.js en la imagen final y Nginx como servidor de archivos estáticos.
+
+**Contexto de ejecución:** El Dockerfile se ejecuta desde la raíz del monorepo (`alentapp/`), ya que el frontend depende del paquete `@alentapp/shared` y la configuración de TypeScript está en la raíz:
+
+```bash
+docker build -f packages/web/Dockerfile.prod -t alentapp-web:prod .
+```
+
+El `context: .` es necesario porque el monorepo contiene:
+
+- `packages/web/` — código fuente React, configuración de Vite
+- `packages/shared/` — DTOs y tipos compartidos (dependencia del frontend)
+- `tsconfig.json` raíz — configuración del compilador TypeScript
+- `package.json` raíz — definición de workspaces de npm
+
+---
+
+#### Estructura: Multi-stage build con 3 etapas
+
+El Dockerfile se compone de **3 etapas secuenciales**, cada una con una responsabilidad única. Las etapas anteriores proveen insumos a las siguientes, y solo la última genera la imagen final.
+
+##### Tabla de etapas
+
+| Etapa | Nombre | Base | Propósito |
+|-------|--------|------|-----------|
+| Stage 1 | `deps` | `node:22-alpine` | Instalar dependencias del workspace |
+| Stage 2 | `build` | `node:22-alpine` | Compilar el frontend con Vite (`vite build`) |
+| Stage 3 | `runtime` | `nginx:stable-alpine` | Servir archivos estáticos compilados con Nginx |
+
+##### Detalle de cada etapa
+
+**Stage 1 — `deps`**
+
+Instala todas las dependencias del monorepo. Se copian primero los `package.json` de cada workspace y el `package-lock.json` para aprovechar el cache de capas de Docker: si los archivos de dependencias no cambian, la capa de `npm ci` se reutiliza en builds posteriores, exactamente igual que el stage `deps` de la api.
+
+```dockerfile
+FROM node:22-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY packages/web/package.json ./packages/web/
+COPY packages/shared/package.json ./packages/shared/
+RUN npm ci
+```
+
+Se instalan **todas** las dependencias (incluyendo devDependencies) porque la etapa `build` necesita herramientas como `vite` y `typescript` para compilar.
+
+**Stage 2 — `build`**
+
+Compila el código fuente React a assets estáticos. Copia el `node_modules` completo del Stage 1 y el código fuente, ejecuta `vite build`, y produce el directorio `dist/` con HTML, CSS y JavaScript optimizados y minificados.
+
+```dockerfile
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build -w packages/web
+```
+
+Vite genera el directorio `packages/web/dist/` con todos los assets estáticos listos para ser servidos. Los assets incluyen hashes en sus nombres de archivo (Ej: index-Bx3kL9aP.js), lo que permite configurar caché extensa (Ej: 1 año) en Nginx, ya que si el contenido de un archivo cambia, Vite genera un hash diferente en su nombre, forzando al navegador a descargarlo nuevamente en lugar de usar su copia guardada.
+
+**Stage 3 — `runtime`**
+
+Imagen final mínima basada en Nginx. Toma el directorio dist/ generado por Vite en el Stage 2 y lo copia al directorio donde Nginx busca los archivos para servir (/usr/share/nginx/html). No contiene Node.js, herramientas de build ni código fuente — a diferencia del Stage 3 del backend, no requiere instalar dependencias de producción. Se define explícitamente USER nginx para garantizar ejecución como usuario no-root, requiriendo NET_BIND_SERVICE en el compose para poder bindear el puerto 80.
+
+```dockerfile
+FROM nginx:stable-alpine AS runtime
+
+# Copiar assets compilados al directorio donde Nginx busca los archivos para servir
+COPY --from=build /app/packages/web/dist /usr/share/nginx/html
+
+# Reemplazar la configuración por defecto de Nginx con la nuestra (gzip, caché, etc)
+COPY packages/web/nginx.conf /etc/nginx/conf.d/default.conf
+
+USER nginx
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+---
+
+#### Capas y ordenamiento para cache
+
+El orden de las capas en cada etapa está diseñado para maximizar la reutilización del cache de Docker:
+
+1. **Primero** se copian `package.json` y `package-lock.json` (cambian raramente)
+2. **Luego** se ejecuta `npm ci` (se cachea si los lockfiles no cambiaron)
+3. **Al final** se copia el código fuente (cambia frecuentemente)
+
+Esto significa que en builds consecutivos donde solo cambia código fuente (no dependencias), Docker reutiliza la capa de `npm ci` y solo recompila con Vite. El ahorro es de ~20-40 segundos por build.
+
+---
+
+#### Seguridad
+
+##### Nginx como servidor de producción
+
+A diferencia de la imagen de desarrollo que ejecuta el servidor de Vite (un servidor de desarrollo no apto para producción), la imagen runtime utiliza **Nginx** como servidor HTTP. Esto garantiza:
+
+- Manejo eficiente de conexiones concurrentes (Nginx está diseñado específicamente para atender miles de usuarios simultáneos en producción)
+- Security headers HTTP configurables a nivel de servidor (resticciones de seguridad de Nginx para el uso de archivos enviados al browser)
+- Compresión gzip nativa sin dependencias adicionales (para que el archivo JS pese menos y viaje mas rápido por el servidor desde Nginx hacia browser)
+- Caché de assets estáticos controlada por cabeceras HTTP desde Nginx(cache de archivos del browser)
+
+##### Configuración de Nginx (`nginx.conf`)
+
+```nginx
+server {
+    listen 80;  # Escucha en el puerto 80
+    root /usr/share/nginx/html;	# Indica donde están los archivos que servirá (donde Docker copio /dist)
+    index index.html;	 # Al ingresar a la raíz del sitio, Nginx sirve index.html 
+
+    # Compresión gzip
+    gzip on;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml;  # Indica que tipo de archivos comprimirá
+    gzip_min_length 1024;  # Solo comprime archivos mayores a 1 KB.
+
+    # Caché agresiva (1 año) para assets con hash (JS, CSS, imágenes)
+    location ~* \.(js|css|png|jpg|jpeg|svg|ico|woff2)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";  # Estos archivos jamás cambiaran con el mismo nombre, si se modifican entonces Vite modificara el hash
+	
+    }
+
+    # Security headers
+    add_header X-Frame-Options "DENY";
+    add_header X-Content-Type-Options "nosniff";
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Referrer-Policy "strict-origin-when-cross-origin";
+
+    # SPA fallback: redirigir rutas de React Router a index.html
+    location / {
+      try_files $uri $uri/ /index.html;  
+    }
+}
+```
+
+##### Healthcheck
+
+Se configura un healthcheck que verifica periódicamente si Nginx está respondiendo en el puerto 80. Se realiza un `GET` a la ruta raíz (`localhost:80/`) cada 30 segundos, con un timeout de 5 segundos y 3 reintentos antes de marcar el contenedor como `unhealthy`. Se incluye un período de gracia de 10 segundos al inicio para darle tiempo a Nginx a levantarse. Se usa `wget` en lugar de `curl` porque Alpine lo incluye por defecto.
+
+##### Exclusión de herramientas de build
+
+La imagen runtime **no contiene**:
+
+- `node` / `npm` — no se ejecuta JavaScript en runtime, solo Nginx sirve archivos estáticos
+- `vite` — bundler, solo necesario en la etapa `build`
+- `tsc` / `typescript` — compilador, solo necesario en `build`
+- Código fuente React (`.tsx`, `.ts`) — solo existe el output compilado en `dist/`
+
+Esto se logra porque las etapas `deps` y `build` se descartan: solo se copia el directorio `dist/` a la etapa `runtime`.
+
+##### .dockerignore
+
+El mismo `.dockerignore` definido para la API aplica al contexto de build del frontend, excluyendo `node_modules`, `dist`, `.git`, `.env` y archivos de log. Esto evita copiar archivos innecesarios al contexto de build y reduce el tiempo de transferencia.
+
+---
+
+#### Requisitos no funcionales
+
+| Requisito | Cómo se cumple |
+|-----------|---------------|
+| **Tamaño de imagen reducido** | Multi-stage build descarta Node.js y herramientas de build. Nginx Alpine como base. Solo assets estáticos en la imagen final |
+| **Tiempo de startup bajo** | Nginx inicia en milisegundos, no hay proceso Node.js que arrancar ni módulos que cargar |
+| **Seguridad** | Security headers HTTP configurados en Nginx. Sin Node.js ni herramientas de build en la imagen final. Ejecución como usuario no-root (USER nginx) con NET_BIND_SERVICE en el compose para bindear el puerto 80 |
+| **Compatibilidad con SPA** | Nginx redirige las rutas del frontend a index.html para que React Router pueda manejar la navegación correctamente |
+| **Performance** | Compresión gzip para reducir tamaño de transferencia. Caché inmutable de 1 año para assets con hash de Vite |
+| **Reproducibilidad** | `npm ci` con lockfile garantiza instalaciones determinísticas y reproducibles entre entornos |
+| **Mantenibilidad** | Etapas con nombres semánticos (`deps`, `build`, `runtime`). Configuración de Nginx en archivo separado |
+
+---
+
+#### Archivos complementarios necesarios
+
+Para que el Dockerfile funcione, se requiere el siguiente archivo adicional:
+
+**`packages/web/nginx.conf`**: Configuración de Nginx específica para el frontend de Alentapp. Define la compresión gzip, la política de caché de assets y los security headers HTTP. Este archivo es copiado en la etapa `runtime` y reemplaza la configuración por defecto de Nginx.
+
+
+---
+
 ### c) Diseño de `docker-compose.prod.yml`
 
 #### Propósito
