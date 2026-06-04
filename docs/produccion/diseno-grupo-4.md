@@ -519,6 +519,72 @@ activeRequests--
 -  Momentos de mayor concurrencia
 -  Sobrecarga de la API
 
+---
+
+### b) OpenTelemetry SDK
+
+#### Instrumentación
+
+| Métrica  | Origen | Mecanismo |
+|-------------------|--------|-----------|
+| Rate / Errors / Duration (RED) | **Auto-instrumentación** | `@opentelemetry/auto-instrumentations-node` instrumenta HTTP y Fastify, emitiendo las métricas de servidor según *semantic conventions* (`http.server.request.duration`, contadores de request y de status code), con atributos `http.request.method`, `http.route` y `http.response.status_code` |
+| `process.memory.usage` | **Manual** | `ObservableGauge` con callback que lee `process.memoryUsage().heapUsed` |
+| `http.requests.active` | **Manual** | `UpDownCounter` (`+1` en `onRequest`, `-1` en `onResponse`) |
+
+---
+
+#### Componentes
+
+| Componente | Clase / Paquete | Responsabilidad |
+|------------|-----------------|-----------------|
+| Resource | `Resource` (`@opentelemetry/resources`) | Atributos que identifican el servicio: `service.name`, `service.version`, `deployment.environment` |
+| Exporter | `OTLPMetricExporter` (`@opentelemetry/exporter-metrics-otlp-grpc`) | Envía métricas vía OTLP/gRPC al Collector |
+| Metric Reader | `PeriodicExportingMetricReader` (`@opentelemetry/sdk-metrics`) | Recolecta y empuja métricas cada `exportIntervalMillis` |
+| Instrumentations | `getNodeAutoInstrumentations()` (`@opentelemetry/auto-instrumentations-node`) | Auto-instrumenta HTTP y Fastify (métricas RED) |
+| SDK | `NodeSDK` (`@opentelemetry/sdk-node`) | Orquesta resource + reader + instrumentations y arranca el pipeline |
+| Meter | `metrics.getMeter()` (`@opentelemetry/api`) | Provee los instrumentos manuales adicionales |
+
+---
+
+#### Configuración del SDK
+
+El SDK se define en un módulo dedicado (`packages/api/src/telemetry/sdk.ts`) que debe **inicializarse antes que la aplicación Fastify**, para que la auto-instrumentación pueda interceptar los módulos HTTP/Fastify al cargarse.
+
+```ts
+import { NodeSDK } from '@opentelemetry/sdk-node'
+import { Resource } from '@opentelemetry/resources'
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
+import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics'
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc'
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node'
+
+// Configuración a implementar:
+// 1. OTLPMetricExporter en el puerto específicado en el .env 
+// 2. Auto-instrumentaciones para HTTP y Fastify
+// 3. Métricas manuales: process.memory.usage con ObservableGauge y http.requests.active con UpDownCounter
+```
+
+
+#### Apagado controlado (graceful shutdown)
+
+Para no perder el último lote de métricas, el SDK se cierra ordenadamente ante señales de terminación del contenedor:
+
+```ts
+process.on('SIGTERM', () => {
+  sdk.shutdown().finally(() => process.exit(0))
+})
+```
+
+---
+
+#### Variables de entorno
+
+| Variable | Propósito | Ejemplo |
+|----------|-----------|---------|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Endpoint OTLP/gRPC del Collector | `http://otel-collector:4317` |
+| `OTEL_SERVICE_NAME` | Nombre del servicio (alternativa al Resource) | `alentapp-api` |
+| `APP_VERSION` | Versión reportada en el Resource | `1.0.0` |
+| `NODE_ENV` | Entorno de despliegue | `production` |
 
 
 
