@@ -39,7 +39,7 @@ El Dockerfile se compone de **3 etapas secuenciales**, cada una con una responsa
 
 | Etapa | Nombre | Base | Propósito |
 |-------|--------|------|-----------|
-| Stage 1 | `deps` | `node:22-alpine` | Instalar solo dependencias de producción (`npm ci --omit=dev`) |
+| Stage 1 | `deps` | `node:22-alpine` | Instalar todas las dependencias necesarias para el build (`npm ci`) |
 | Stage 2 | `build` | `node:22-alpine` | Compilar TypeScript, generar Prisma Client |
 | Stage 3 | `runtime` | `node:22-alpine` | Solo runtime: JS compilado + node_modules prod + usuario no-root |
 
@@ -102,7 +102,7 @@ USER appuser
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
 CMD ["node", "dist/packages/api/src/app.js"]
 ```
@@ -139,19 +139,18 @@ La imagen `node:22-alpine` ya trae el usuario `node`, pero se crea un usuario de
 
 ##### Healthcheck
 
-Se configura un healthcheck que verifica periódicamente si la API está respondiendo. Se realiza un `GET` a la ruta raíz (`localhost:3000/`) cada 30 segundos, con un timeout de 5 segundos y 3 reintentos antes de marcar el contenedor como `unhealthy`. Se incluye un período de gracia de 10 segundos al inicio para darle tiempo a Fastify a levantarse. Se usa `wget` en lugar de `curl` porque Alpine lo incluye por defecto.
+Se configura un healthcheck que verifica periódicamente si la API está respondiendo. Se realiza un `GET` a `/health` (`localhost:3000/health`) cada 30 segundos, con un timeout de 5 segundos y 3 reintentos antes de marcar el contenedor como `unhealthy`. Se incluye un período de gracia de 10 segundos al inicio para darle tiempo a Fastify a levantarse. Se usa `wget` en lugar de `curl` porque Alpine lo incluye por defecto.
 
 ##### Exclusión de herramientas de build
 
-La imagen runtime **no contiene**:
+La imagen runtime **no contiene** herramientas de build que solo fueron necesarias en las etapas anteriores:
 
 - `tsc` / `typescript` — compilador, solo necesario en la etapa `build`
 - `npx` / `prisma` CLI — generador de cliente, solo necesario en `build`
 - `tsx` — transpilador de desarrollo
 - `vitest` — framework de testing
-- `npm` — gestor de paquetes (no se hacen installs en runtime)
 
-Esto se logra porque las etapas `deps` y `build` se descartan: solo se copia el resultado compilado (`dist/`) a la etapa `runtime`.
+Nota: `npm` permanece en la imagen porque se utiliza en la etapa `runtime` para instalar dependencias de producción (`npm ci --omit=dev`). Las etapas `deps` y `build` se descartan, por lo que sus herramientas no se copian a la imagen final.
 
 ##### .dockerignore
 
