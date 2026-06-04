@@ -214,3 +214,109 @@ Para que el Dockerfile funcione, se requieren los siguientes archivos adicionale
 **`tsconfig.build.json`** (en la raíz del monorepo): Configuración de TypeScript específica para producción que extiende `tsconfig.json`. Define `outDir: "dist"`, `rootDir: "."`, excluye archivos de test (`*.test.ts`), y desactiva `declaration` y `sourceMap`.
 
 **Script de build en `packages/api/package.json`**: `"build": "tsc -p ../../tsconfig.build.json"` para compilar desde el contexto del paquete.
+
+---
+
+## 2.2. Diseño de la observabilidad
+
+### a) Métricas RED a capturar
+
+| Métrica | Tipo OpenTelemetry | Descripción | Labels |
+| --- | --- | --- | --- |
+|Rate |   Counter  |  Requests por segundo   |   method, route, status  |
+|Errors|  Counter  |  Tasa de error (4xx/5xx)   |  method, route, status   |
+|Duration |  Histogram |  Latencia de las requests |  method, route   |
+
+
+### Métricas adicionales
+
+| Métrica | Tipo OpenTelemetry | Descripción | Labels |
+| --- | --- | --- | --- |
+|`process.memory.usage` |   Gauge  |  Memoria del proceso   | service.name  |
+|`http.requests.active`|  Gauge  |  Requests concurrentes  |  route   |
+
+--- 
+
+## Diseño de implementación
+
+#### 1. Para el `Rate` se utilizará un `Counter` llamado: 
+`http.requests.total`
+
+Cada vez que llegue una request se incrementará el contador
+```js
+requestCounter.add(1, {
+  method: req.method,
+  route: req.route.path,
+  status: res.statusCode
+})
+```
+**Su objetivo es calcular:** 
+-  Cantidad de requests por segundo
+-  Endpoints más utilizados 
+-  El volumen del tráfico.
+
+
+#### 2. Para el `Errors` se utilizará un `Counter` llamado: 
+`http.request.errors`
+
+Cada vez que una request finalice con un código HTTP 4xx o 5xx se incrementará el contador.
+```js
+if (res.statusCode >= 400) {
+  errorCounter.add(1, {
+    method: req.method,
+    route: req.route.path,
+    status: res.statusCode
+  })
+}
+```
+**Su objetivo es calcular:** 
+-  Errores del servidor
+-  Endpoints problemáticos
+
+
+#### 3. Para la `Duration` se utilizará un `Histogram` llamado: 
+`http.request.duration`
+
+Se registrará el tiempo total de ejecución de cada request:
+```js
+durationHistogram.record(durationMs, {
+  method: req.method,
+  route: req.route.path
+})
+```
+**Su objetivo es calcular:** 
+-  Latencia promedio
+-  Endpoints lentos
+
+
+#### 4. Para la métrica adicional `process.memory.usage` se utilizará un `Gauge` llamado: 
+`process.memory.usage`
+
+Se registrará el consumo de memoria utilizado por el proceso mediante:
+```js
+process.memoryUsage().heapUsed
+```
+**Su objetivo es calcular:** 
+-  Consumo de RAM
+-  Estabilidad del servicio
+
+
+#### 5. Para la métrica adicional `http.requests.active` se utilizará un `Gauge` llamado: 
+`http.requests.active`
+
+El valor del `Gauge` se incrementará al iniciar una request y se decrementará cuando la request finalice.
+```js
+activeRequests++
+```
+Decrementando cuando finalice la request
+```js
+activeRequests--
+```
+**Su objetivo es detectar:** 
+-  Saturación
+-  Momentos de mayor concurrencia
+-  Sobrecarga de la API
+
+
+
+
