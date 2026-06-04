@@ -425,76 +425,36 @@ Los servicios obtienen estos valores mediante la directiva `env_file: .env`. Est
 
 | Métrica | Tipo OpenTelemetry | Descripción | Labels |
 | --- | --- | --- | --- |
-|Rate |   Counter  |  Requests por segundo   |   method, route, status  |
-|Errors|  Counter  |  Tasa de error (4xx/5xx)   |  method, route, status   |
-|Duration |  Histogram |  Latencia de las requests |  method, route   |
+|Rate | Histogram (`http.server.request.duration`) | Requests por segundo (count del histograma) | http.request.method, http.route, http.response.status_code |
+|Errors | Histogram (`http.server.request.duration`) | Tasa de error (4xx/5xx), filtrada por status | http.request.method, http.route, http.response.status_code |
+|Duration | Histogram (`http.server.request.duration`) | Latencia de las requests | http.request.method, http.route |
 
 
 #### Métricas adicionales
 
 | Métrica | Tipo OpenTelemetry | Descripción | Labels |
 | --- | --- | --- | --- |
-|`process.memory.usage` |   Gauge  |  Memoria del proceso   | service.name  |
-|`http.requests.active`|  Gauge  |  Requests concurrentes  |  route   |
+|`process.memory.usage` | ObservableGauge | Memoria del proceso | service.name |
+|`http.requests.active`| UpDownCounter | Requests concurrentes | route |
 
 --- 
 
 #### Diseño de implementación
 
-##### 1. Para el `Rate` se utilizará un `Counter` llamado: 
-`http.requests.total`
+##### 1. Rate, Errors y Duration (RED) — auto-instrumentación
 
-Cada vez que llegue una request se incrementará el contador
-```js
-requestCounter.add(1, {
-  method: req.method,
-  route: req.route.path,
-  status: res.statusCode
-})
-```
-**Su objetivo es calcular:** 
--  Cantidad de requests por segundo
--  Endpoints más utilizados 
--  El volumen del tráfico.
+Las tres métricas RED las captura `@opentelemetry/auto-instrumentations-node`, que instrumenta HTTP/Fastify y emite el histograma `http.server.request.duration` según *semantic conventions*, con los atributos `http.request.method`, `http.route` y `http.response.status_code`. No requiere código manual.
+
+A partir de ese histograma se derivan:
+-  **Rate:** requests por segundo (a partir del `count` del histograma)
+-  **Errors:** filtrando por `http.response.status_code` >= 400 (4xx/5xx)
+-  **Duration:** percentiles de latencia (p50/p95/p99)
 
 
-##### 2. Para el `Errors` se utilizará un `Counter` llamado: 
-`http.request.errors`
-
-Cada vez que una request finalice con un código HTTP 4xx o 5xx se incrementará el contador.
-```js
-if (res.statusCode >= 400) {
-  errorCounter.add(1, {
-    method: req.method,
-    route: req.route.path,
-    status: res.statusCode
-  })
-}
-```
-**Su objetivo es calcular:** 
--  Errores del servidor
--  Endpoints problemáticos
-
-
-##### 3. Para la `Duration` se utilizará un `Histogram` llamado: 
-`http.request.duration`
-
-Se registrará el tiempo total de ejecución de cada request:
-```js
-durationHistogram.record(durationMs, {
-  method: req.method,
-  route: req.route.path
-})
-```
-**Su objetivo es calcular:** 
--  Latencia promedio
--  Endpoints lentos
-
-
-##### 4. Para la métrica adicional `process.memory.usage` se utilizará un `Gauge` llamado: 
+##### 2. Para la métrica adicional `process.memory.usage` se utilizará un `ObservableGauge` llamado: 
 `process.memory.usage`
 
-Se registrará el consumo de memoria utilizado por el proceso mediante:
+Se registrará el consumo de memoria utilizado por el proceso mediante un callback que lee:
 ```js
 process.memoryUsage().heapUsed
 ```
@@ -503,16 +463,13 @@ process.memoryUsage().heapUsed
 -  Estabilidad del servicio
 
 
-##### 5. Para la métrica adicional `http.requests.active` se utilizará un `Gauge` llamado: 
+##### 3. Para la métrica adicional `http.requests.active` se utilizará un `UpDownCounter` llamado: 
 `http.requests.active`
 
-El valor del `Gauge` se incrementará al iniciar una request y se decrementará cuando la request finalice.
+Se incrementa al iniciar una request (`onRequest`) y se decrementa cuando finaliza (`onResponse`).
 ```js
-activeRequests++
-```
-Decrementando cuando finalice la request
-```js
-activeRequests--
+activeRequests.add(1)   // onRequest
+activeRequests.add(-1)  // onResponse
 ```
 **Su objetivo es detectar:** 
 -  Saturación
@@ -593,11 +550,11 @@ process.on('SIGTERM', () => {
 
 | Panel | Métrica | Tipo de gráfico | Propósito |
 |-------|---------|-----------------|-----------|
-| 1. Request Rate | `http.requests.total` (Rate) | Time series (líneas) | Mostrar las requests por segundo a lo largo del tiempo |
-| 2. Error Rate | `http.request.errors` (Errors) | Time series (líneas) | Mostrar el porcentaje/cantidad de respuestas 4xx y 5xx |
-| 3. Latencia (p50/p95/p99) | `http.request.duration` (Duration) | Time series (líneas) | Mostrar cuánto tardan las requests en distintos percentiles |
+| 1. Request Rate | `http.server.request.duration` (count) | Time series (líneas) | Mostrar las requests por segundo a lo largo del tiempo |
+| 2. Error Rate | `http.server.request.duration` filtrado por `http.response.status_code` | Time series (líneas) | Mostrar el porcentaje/cantidad de respuestas 4xx y 5xx |
+| 3. Latencia (p50/p95/p99) | `http.server.request.duration` (percentiles) | Time series (líneas) | Mostrar cuánto tardan las requests en distintos percentiles |
 | 4. Requests activas | `http.requests.active` | Gauge (aguja) | Mostrar cuántas requests se están procesando en este instante |
 | 5. Memoria del proceso | `process.memory.usage` | Time series (líneas) | Mostrar el consumo de RAM del proceso de la API |
-| 6. Top endpoints | `http.requests.total` por `route` | Table / Bar gauge | Ranking de las rutas más usadas (y más lentas) |
+| 6. Top endpoints | `http.server.request.duration` por `http.route` | Table / Bar gauge | Ranking de las rutas más usadas (y más lentas) |
 
 
