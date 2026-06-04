@@ -9,7 +9,6 @@ describe('Medical Certificate API End-to-End Tests', () => {
     let app: FastifyInstance;
     let prisma: PrismaClient;
     let createdMemberId: string;
-    let createdMedicalCertificateId: string;
 
     const randomSuffix = Math.floor(Math.random() * 100000).toString();
     const testDni = `MC-E2E-${randomSuffix}`;
@@ -88,12 +87,9 @@ describe('Medical Certificate API End-to-End Tests', () => {
         expect(body.data.id).toBeDefined();
         expect(body.data.doctor_license).toBe('MP-123456');
 
-        // Guardamos el ID para reutilizar en los siguientes tests
-        createdMedicalCertificateId = body.data.id;
-
         // Verificación directa E2E: ¿Se guardó realmente en PostgreSQL?
         const dbMedicalCertificate = await prisma.medicalCertificate.findUnique({
-            where: { id: createdMedicalCertificateId },
+            where: { id: body.data.id },
         });
 
         expect(dbMedicalCertificate).not.toBeNull();
@@ -101,10 +97,13 @@ describe('Medical Certificate API End-to-End Tests', () => {
     });
 
     it('3. POST: Debe invalidar el certificado activo anterior antes de crear uno nuevo', async () => {
-        await prisma.medicalCertificate.update({
-            where: { id: createdMedicalCertificateId },
+        const existing = await prisma.medicalCertificate.create({
             data: {
-                is_validated: true, //establece el registro como true
+                issue_date: new Date('2025-01-01'),
+                expiry_date: new Date('2026-01-01'),
+                doctor_license: 'MP-PREV',
+                member_id: createdMemberId,
+                is_validated: true,
             },
         });
 
@@ -123,25 +122,23 @@ describe('Medical Certificate API End-to-End Tests', () => {
         });
 
         expect(response.statusCode).toBe(201);
-        const body = JSON.parse(response.payload);
 
         //busca el certificado previo y verifica que se haya invalidado
         const previousMedicalCertificate = await prisma.medicalCertificate.findUnique({
-            where: { id: createdMedicalCertificateId },
+            where: { id: existing.id },
         });
         expect(previousMedicalCertificate?.is_validated).toBe(false);
 
-        //actualiza variable global con el ID del nuevo certificado para futuras pruebas
-		createdMedicalCertificateId = body.data.id;
+        const body = JSON.parse(response.payload);
 
-		//busca el nuevo certificado recien insertado directamente en la bd para verificar existencia
-		const newMedicalCertificate = await prisma.medicalCertificate.findUnique({
-			where: { id: createdMedicalCertificateId },
-		});
+        //busca el nuevo certificado recien insertado directamente en la bd para verificar existencia
+        const newMedicalCertificate = await prisma.medicalCertificate.findUnique({
+            where: { id: body.data.id },
+        });
 
-		expect(newMedicalCertificate).not.toBeNull();
-		expect(newMedicalCertificate?.doctor_license).toBe('MP-999999');
-	});
+        expect(newMedicalCertificate).not.toBeNull();
+        expect(newMedicalCertificate?.doctor_license).toBe('MP-999999');
+    });
 
     it('4. POST: Debe fallar si expiry_date es anterior a issue_date', async () => {
         const payload = {
@@ -163,6 +160,16 @@ describe('Medical Certificate API End-to-End Tests', () => {
     });
 
     it('5. PUT: Debe actualizar el certificado médico modificando la base de datos', async () => {
+        const cert = await prisma.medicalCertificate.create({
+            data: {
+                issue_date: new Date('2026-01-01'),
+                expiry_date: new Date('2026-12-31'),
+                doctor_license: 'MP-PUT-BASE',
+                member_id: createdMemberId,
+                is_validated: false,
+            },
+        });
+
         const updatePayload = {
             doctor_license: 'MP-UPDATED',
             is_validated: true,
@@ -170,7 +177,7 @@ describe('Medical Certificate API End-to-End Tests', () => {
 
         const response = await app.inject({
             method: 'PUT',
-            url: `/api/v1/medical-certificates/${createdMedicalCertificateId}`,
+            url: `/api/v1/medical-certificates/${cert.id}`,
             payload: updatePayload,
         });
 
@@ -181,13 +188,23 @@ describe('Medical Certificate API End-to-End Tests', () => {
 
         // Verificar directamente en PostgreSQL que los campos se modificaron
         const dbMedicalCertificate = await prisma.medicalCertificate.findUnique({
-            where: { id: createdMedicalCertificateId },
+            where: { id: cert.id },
         });
         expect(dbMedicalCertificate?.doctor_license).toBe('MP-UPDATED');
         expect(dbMedicalCertificate?.is_validated).toBe(true);
     });
 
     it('6. PUT: Debe fallar si expiry_date es anterior a issue_date', async () => {
+        const cert = await prisma.medicalCertificate.create({
+            data: {
+                issue_date: new Date('2026-01-01'),
+                expiry_date: new Date('2026-12-31'),
+                doctor_license: 'MP-PUT-FECHAS',
+                member_id: createdMemberId,
+                is_validated: false,
+            },
+        });
+
         const updatePayload = {
             issue_date: '2026-12-31',
             expiry_date: '2026-01-01',
@@ -195,7 +212,7 @@ describe('Medical Certificate API End-to-End Tests', () => {
 
         const response = await app.inject({
             method: 'PUT',
-            url: `/api/v1/medical-certificates/${createdMedicalCertificateId}`,
+            url: `/api/v1/medical-certificates/${cert.id}`,
             payload: updatePayload,
         });
 
@@ -205,20 +222,27 @@ describe('Medical Certificate API End-to-End Tests', () => {
     });
 
     it('7. DELETE: Debe eliminar físicamente el certificado médico de la base de datos', async () => {
+        const cert = await prisma.medicalCertificate.create({
+            data: {
+                issue_date: new Date('2026-01-01'),
+                expiry_date: new Date('2026-12-31'),
+                doctor_license: 'MP-DELETE-BASE',
+                member_id: createdMemberId,
+                is_validated: false,
+            },
+        });
+
         const response = await app.inject({
             method: 'DELETE',
-            url: `/api/v1/medical-certificates/${createdMedicalCertificateId}`,
+            url: `/api/v1/medical-certificates/${cert.id}`,
         });
 
         expect(response.statusCode).toBe(204);
 
         // Verificar que Prisma ya no encuentra el certificado
         const dbMedicalCertificate = await prisma.medicalCertificate.findUnique({
-            where: { id: createdMedicalCertificateId },
+            where: { id: cert.id },
         });
         expect(dbMedicalCertificate).toBeNull();
-
-        // Anular variable para evitar doble borrado en afterAll
-        createdMedicalCertificateId = '';
     });
 });
