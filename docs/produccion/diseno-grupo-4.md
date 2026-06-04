@@ -430,7 +430,7 @@ Los servicios obtienen estos valores mediante la directiva `env_file: .env`. Est
 |Duration |  Histogram |  Latencia de las requests |  method, route   |
 
 
-### Métricas adicionales
+#### Métricas adicionales
 
 | Métrica | Tipo OpenTelemetry | Descripción | Labels |
 | --- | --- | --- | --- |
@@ -439,9 +439,9 @@ Los servicios obtienen estos valores mediante la directiva `env_file: .env`. Est
 
 --- 
 
-## Diseño de implementación
+#### Diseño de implementación
 
-#### 1. Para el `Rate` se utilizará un `Counter` llamado: 
+##### 1. Para el `Rate` se utilizará un `Counter` llamado: 
 `http.requests.total`
 
 Cada vez que llegue una request se incrementará el contador
@@ -458,7 +458,7 @@ requestCounter.add(1, {
 -  El volumen del tráfico.
 
 
-#### 2. Para el `Errors` se utilizará un `Counter` llamado: 
+##### 2. Para el `Errors` se utilizará un `Counter` llamado: 
 `http.request.errors`
 
 Cada vez que una request finalice con un código HTTP 4xx o 5xx se incrementará el contador.
@@ -476,7 +476,7 @@ if (res.statusCode >= 400) {
 -  Endpoints problemáticos
 
 
-#### 3. Para la `Duration` se utilizará un `Histogram` llamado: 
+##### 3. Para la `Duration` se utilizará un `Histogram` llamado: 
 `http.request.duration`
 
 Se registrará el tiempo total de ejecución de cada request:
@@ -491,7 +491,7 @@ durationHistogram.record(durationMs, {
 -  Endpoints lentos
 
 
-#### 4. Para la métrica adicional `process.memory.usage` se utilizará un `Gauge` llamado: 
+##### 4. Para la métrica adicional `process.memory.usage` se utilizará un `Gauge` llamado: 
 `process.memory.usage`
 
 Se registrará el consumo de memoria utilizado por el proceso mediante:
@@ -503,7 +503,7 @@ process.memoryUsage().heapUsed
 -  Estabilidad del servicio
 
 
-#### 5. Para la métrica adicional `http.requests.active` se utilizará un `Gauge` llamado: 
+##### 5. Para la métrica adicional `http.requests.active` se utilizará un `Gauge` llamado: 
 `http.requests.active`
 
 El valor del `Gauge` se incrementará al iniciar una request y se decrementará cuando la request finalice.
@@ -586,5 +586,18 @@ process.on('SIGTERM', () => {
 | `APP_VERSION` | Versión reportada en el Resource | `1.0.0` |
 | `NODE_ENV` | Entorno de despliegue | `production` |
 
+---
+
+### c) Dashboard RED en Grafana
+
+
+| Panel | Métrica | Tipo de gráfico | Propósito |
+|-------|---------|-----------------|-----------|
+| 1. Request Rate | `http.requests.total` (Rate) | Time series (líneas) | Mostrar las requests por segundo a lo largo del tiempo |
+| 2. Error Rate | `http.request.errors` (Errors) | Time series (líneas) | Mostrar el porcentaje/cantidad de respuestas 4xx y 5xx |
+| 3. Latencia (p50/p95/p99) | `http.request.duration` (Duration) | Time series (líneas) | Mostrar cuánto tardan las requests en distintos percentiles |
+| 4. Requests activas | `http.requests.active` | Gauge (aguja) | Mostrar cuántas requests se están procesando en este instante |
+| 5. Memoria del proceso | `process.memory.usage` | Time series (líneas) | Mostrar el consumo de RAM del proceso de la API |
+| 6. Top endpoints | `http.requests.total` por `route` | Table / Bar gauge | Ranking de las rutas más usadas (y más lentas) |
 
 
