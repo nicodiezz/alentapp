@@ -511,6 +511,25 @@ healthcheck:
 | `start_period` | 10s | Fastify necesita tiempo de arranque; los fallos durante este período no cuentan |
 | `retries` | 3 | Tolerancia a fallos transitorios |
 
+**WEB:**
+
+```yaml
+healthcheck:
+  test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 5s
+```
+
+| Parámetro      | Valor | Justificación                                                   |
+| -------------- | ----- | --------------------------------------------------------------- |
+| `interval` | 30s | Balance entre detección de fallos y consumo de recursos |
+| `timeout` | 5s | Si Nginx no responde en 5 segundos, se considera una falla |
+| `start_period` | 5s | Nginx inicia rápidamente; un período corto es suficiente |
+| `retries` | 3 | Evita marcar el servicio como unhealthy por fallos transitorios |
+
+
 **DB:**
 
 ```yaml
