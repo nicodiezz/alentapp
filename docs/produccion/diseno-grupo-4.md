@@ -534,14 +534,23 @@ healthcheck:
 
 Se aplican las siguientes medidas de endurecimiento en los servicios `api` y `web`:
 
+**api**:
 ```yaml
-security_opt:
-  - no-new-privileges:true
-read_only: true
-cap_drop:
-  - ALL
-cap_add:
-  - NET_BIND_SERVICE
+  security_opt:
+    - no-new-privileges:true
+  read_only: true
+  cap_drop:
+    - ALL
+```
+**web**:
+```yaml
+  security_opt:
+    - no-new-privileges:true
+  read_only: true
+  cap_drop:
+    - ALL
+  cap_add:
+    - NET_BIND_SERVICE
 ```
 
 | Medida | Justificación |
