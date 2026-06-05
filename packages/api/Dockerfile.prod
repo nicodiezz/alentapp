@@ -25,6 +25,10 @@ COPY . .
 RUN npx prisma generate --config packages/api/prisma.config.ts
 RUN npx tsc -p tsconfig.build.json
 
+# Prisma Client v7 genera .js (no .ts), tsc lo ignora — copiarlo manualmente
+RUN mkdir -p dist/packages/api/src/generated && \
+    cp -r packages/api/src/generated/client dist/packages/api/src/generated/
+
 # ============================================================
 # Stage 3 — runtime
 # Imagen final mínima: JS compilado + node_modules prod
@@ -53,6 +57,6 @@ USER appuser
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/health || exit 1
 
 CMD ["node", "dist/packages/api/src/app.js"]
