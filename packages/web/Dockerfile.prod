@@ -9,8 +9,7 @@ COPY packages/web/package.json ./packages/web/
 COPY packages/shared/package.json ./packages/shared/
 
 # Instalar todas las dependencias (incluyendo devDependencies que necesita el build)
-# --no-cache evita guardar el cache de npm dentro de la imagen
-RUN npm ci --no-cache
+RUN npm ci
 
 # Stage 2: Compilar el frontend con Vite
 FROM node:22-alpine AS build
