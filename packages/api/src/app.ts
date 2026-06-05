@@ -1,3 +1,4 @@
+import { activeRequests } from './infrastructure/telemetry.js';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { PostgresMemberRepository } from './infrastructure/PostgresMemberRepository.js';
@@ -65,6 +66,17 @@ export function buildApp() {
         },
     });
 
+    // Tracking de requests activas
+    server.addHook('onRequest', (request, reply, done) => {
+        activeRequests.add(1);
+        done();
+    });
+
+    server.addHook('onResponse', (request, reply, done) => {
+        activeRequests.add(-1);
+        done();
+    });
+
     server.register(cors, {
         origin: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -110,7 +122,7 @@ export function buildApp() {
     const getEquipmentLoansUseCase = new GetEquipmentLoansUseCase(equipmentLoanRepo);
     const deleteEquipmentLoanUseCase = new DeleteEquipmentLoanUseCase(equipmentLoanRepo);
     const equipmentLoanController = new EquipmentLoanController(createEquipmentLoanUseCase, updateEquipmentLoanUseCase, getEquipmentLoansUseCase, deleteEquipmentLoanUseCase);
-    
+
     const lockerRepo = new PostgresLockerRepository();
     const lockerValidator = new LockerValidator(lockerRepo);
     const createLockerUseCase = new CreateLockerUseCase(lockerRepo, lockerValidator);
@@ -207,7 +219,7 @@ export function buildApp() {
     server.post('/api/v1/lockers', lockerController.create.bind(lockerController));
     server.put('/api/v1/lockers/:id', lockerController.update.bind(lockerController));
     server.delete('/api/v1/lockers/:id', lockerController.delete.bind(lockerController));
-    
+
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
     });
