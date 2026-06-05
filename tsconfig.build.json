@@ -1,0 +1,19 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "outDir": "dist",
+        "rootDir": ".",
+        "declaration": false,
+        "sourceMap": false
+    },
+    "include": [
+        "packages/api/src/**/*.ts",
+        "packages/shared/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "**/*.test.ts",
+        "**/*.spec.ts",
+        "packages/web"
+    ]
+}
