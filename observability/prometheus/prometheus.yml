@@ -1,0 +1,21 @@
+#Al no conocer la tecnología comento todo:
+
+global:                                  # Configuración global aplicada a todos los jobs
+  scrape_interval: 15s                   # Frecuencia con la que Prometheus consulta (scrapea) los targets
+
+scrape_configs:                          # Lista de trabajos (jobs) de scraping
+  # Métricas de la API (RED + adicionales) que el Collector recibe por OTLP/gRPC y reexpone para Prometheus
+  - job_name: 'otel-collector'           # Job que scrapea el OpenTelemetry Collector
+    static_configs:                      # Targets definidos de forma estática (sin service discovery)
+      - targets: ['otel-collector:8889'] # Endpoint Prometheus del Collector, accesible por nombre de servicio en app-network
+        labels:                          # Labels añadidos a todas las métricas de este job
+          app: 'alentapp'                # Identifica la aplicación
+          service: 'api'                 # Identifica el componente de origen (la API)
+
+  # Telemetría interna del propio Collector (salud del pipeline de observabilidad)
+  - job_name: 'otel-collector-internal'  # Job que scrapea las métricas internas del Collector
+    static_configs:                      # Targets estáticos
+      - targets: ['otel-collector:8888'] # Endpoint de métricas internas del Collector dentro de app-network
+        labels:                          # Labels añadidos a todas las métricas de este job
+          app: 'alentapp'                # Identifica la aplicación
+          service: 'otel-collector'      # Identifica al Collector como origen
