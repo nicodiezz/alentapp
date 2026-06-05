@@ -7,7 +7,7 @@ scrape_configs:                          # Lista de trabajos (jobs) de scraping
   # Métricas de la API (RED + adicionales) que el Collector recibe por OTLP/gRPC y reexpone para Prometheus
   - job_name: 'otel-collector'           # Job que scrapea el OpenTelemetry Collector
     static_configs:                      # Targets definidos de forma estática (sin service discovery)
-      - targets: ['otel-collector:8889'] # Endpoint Prometheus del Collector, accesible por nombre de servicio en app-network
+      - targets: ['otel-collector:9464'] # Endpoint Prometheus del Collector, accesible por nombre de servicio en app-network
         labels:                          # Labels añadidos a todas las métricas de este job
           app: 'alentapp'                # Identifica la aplicación
           service: 'api'                 # Identifica el componente de origen (la API)
