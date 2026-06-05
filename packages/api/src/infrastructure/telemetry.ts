@@ -1,29 +1,29 @@
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
-import { getNodeAutoInstrumentations } from
-  '@opentelemetry/auto-instrumentations-node';
-import { metrics, Meter } from '@opentelemetry/api';
-import { FastifyInstrumentation } from
-  '@opentelemetry/instrumentation-fastify';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
+import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { metrics } from '@opentelemetry/api';
+import { FastifyInstrumentation } from '@opentelemetry/instrumentation-fastify';
 
-const prometheusExporter = new PrometheusExporter({
-  port: 9464,
-  host: '0.0.0.0',
-  endpoint: '/metrics',
+const otlpExporter = new OTLPMetricExporter({
+  url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? 'http://otel-collector:4317',
 });
 
 const sdk = new NodeSDK({
-  metricReader: prometheusExporter,
+  metricReader: new PeriodicExportingMetricReader({
+    exporter: otlpExporter,
+    exportIntervalMillis: 10000,
+  }),
   instrumentations: [
     getNodeAutoInstrumentations({
       '@opentelemetry/instrumentation-http': {},
     }),
-
     new FastifyInstrumentation(),
   ],
 });
 
 sdk.start();
+
 const meter = metrics.getMeter('alentapp-api');
 
 // Métrica adicional: HTTP requests activas
@@ -41,24 +41,10 @@ meter.addBatchObservableCallback((observableResult) => {
   observableResult.observe(memoryUsageGauge, process.memoryUsage().heapUsed);
 }, [memoryUsageGauge]);
 
-export function createREDMetrics(meter: Meter) {
+// Captura la señal SIGTERM para cerrar OpenTelemetry correctamente
+// antes de finalizar el proceso y evitar pérdida de métricas o trazas.
+process.on('SIGTERM', () => {
+  sdk.shutdown().finally(() => process.exit(0));
+});
 
-  //Contador de requests 
-  const requestCounter = meter.createCounter('http.requests.total', {
-    description: 'Total de requests HTTP',
-  });
-  //Contador de errores HTTP
-  const errorCounter = meter.createCounter('http.requests.errors', {
-    description: 'Total de errores HTTP',
-  });
-  //Histograma de duración de requests
-  const requestDuration = meter.createHistogram('http.request.duration', {
-    description: 'Duración de requests',
-    unit: 'ms',
-  });
-
-
-  //Devuelve los contadores
-  return { requestCounter, errorCounter, requestDuration };
-}
-export { sdk, meter, prometheusExporter, activeRequests };
+export { sdk, meter, activeRequests };
