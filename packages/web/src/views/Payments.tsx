@@ -41,7 +41,6 @@ import {
     createListCollection,
 } from '../components/ui/select';
 import { membersService } from '../services/members';
-import { toaster } from '../components/ui/toaster';
 
 export function PaymentsView() {
     const [payments, setPayments] = useState<PaymentDTO[]>([]);
