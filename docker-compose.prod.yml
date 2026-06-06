@@ -15,8 +15,6 @@ services:
   
   db:
     image: postgres:16-alpine
-    ports:
-      - "5432:5432"
     env_file: .env
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -45,7 +43,6 @@ services:
       dockerfile: packages/api/Dockerfile.prod
     ports:
       - "3000:3000"
-      - "9464:9464"
     env_file: .env
     depends_on:
       db:
