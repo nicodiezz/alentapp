@@ -11,7 +11,7 @@ export class DisciplineController {
         private readonly getDisciplinesUseCase: GetDisciplinesUseCase,
         private readonly updateDisciplineUseCase: UpdateDisciplineUseCase,
         private readonly deleteDisciplineUseCase: DeleteDisciplineUseCase,
-    ) {}
+    ) { }
 
     async getAll(_request: FastifyRequest, reply: FastifyReply) {
         try {

@@ -11,7 +11,7 @@ export class EquipmentLoanController {
         private readonly updateEquipmentLoanUseCase: UpdateEquipmentLoanUseCase,
         private readonly getEquipmentLoansUseCase: GetEquipmentLoansUseCase,
         private readonly deleteEquipmentLoanUseCase: DeleteEquipmentLoanUseCase,
-    ) {}
+    ) { }
 
     async create(
         request: FastifyRequest<{ Body: CreateEquipmentLoanRequest }>,

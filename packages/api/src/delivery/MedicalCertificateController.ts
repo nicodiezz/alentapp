@@ -11,7 +11,7 @@ export class MedicalCertificateController {
         private readonly getMedicalCertificatesUseCase: GetMedicalCertificatesUseCase,
         private readonly updateMedicalCertificateUseCase: UpdateMedicalCertificateUseCase,
         private readonly deleteMedicalCertificateUseCase: DeleteMedicalCertificateUseCase,
-    ) {}
+    ) { }
 
     async getAll(_request: FastifyRequest, reply: FastifyReply) {
         try {
