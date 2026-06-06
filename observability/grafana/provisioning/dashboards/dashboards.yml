@@ -1,0 +1,13 @@
+# Provider de dashboards: carga los .json de la carpeta montada al arrancar Grafana
+apiVersion: 1
+
+providers:
+  - name: 'Alentapp'                       # Nombre del provider
+    orgId: 1                               # Organización por defecto
+    folder: 'Alentapp'                     # Carpeta donde se agrupan los dashboards
+    type: file                             # Origen: archivos en disco
+    disableDeletion: false                 # Permite borrar dashboards huérfanos
+    updateIntervalSeconds: 30              # Recarga cambios cada 30s
+    allowUiUpdates: false                  # No editable desde la UI (se gestiona como código)
+    options:
+      path: /var/lib/grafana/dashboards    # Ruta montada con los .json

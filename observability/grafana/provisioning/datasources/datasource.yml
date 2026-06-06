@@ -1,0 +1,11 @@
+# Datasource de Grafana: Prometheus (provisioning automático al arrancar)
+apiVersion: 1
+
+datasources:
+  - name: Prometheus              # Nombre visible del datasource
+    uid: prometheus              # UID fijo, referenciado por el dashboard
+    type: prometheus             # Tipo de datasource
+    access: proxy                # Grafana hace de proxy hacia Prometheus
+    url: http://prometheus:9090  # Endpoint de Prometheus dentro de app-network
+    isDefault: true              # Datasource por defecto
+    editable: false              # No editable desde la UI (se gestiona como código)
