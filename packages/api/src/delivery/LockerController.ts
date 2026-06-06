@@ -11,7 +11,7 @@ export class LockerController {
         private readonly getLockersUseCase: GetLockersUseCase,
         private readonly updateLockerUseCase: UpdateLockerUseCase,
         private readonly deleteLockerUseCase: DeleteLockerUseCase,
-    ) {}
+    ) { }
 
     async getAll(_request: FastifyRequest, reply: FastifyReply) {
         try {

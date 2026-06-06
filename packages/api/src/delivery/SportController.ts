@@ -11,7 +11,7 @@ export class SportController {
         private readonly getSportsUseCase: GetSportsUseCase,
         private readonly updateSportUseCase: UpdateSportUseCase,
         private readonly deleteSportUseCase: DeleteSportUseCase,
-    ) {}
+    ) { }
 
     async getAll(_request: FastifyRequest, reply: FastifyReply) {
         try {

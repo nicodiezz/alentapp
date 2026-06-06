@@ -11,7 +11,7 @@ export class MemberController {
         private readonly getMembersUseCase: GetMembersUseCase,
         private readonly updateMemberUseCase: UpdateMemberUseCase,
         private readonly deleteMemberUseCase: DeleteMemberUseCase,
-    ) {}
+    ) { }
 
     async getAll(_request: FastifyRequest, reply: FastifyReply) {
         try {
