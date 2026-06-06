@@ -99,6 +99,7 @@ services:
       - "3000:3000"
     environment:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_SEMCONV_STABILITY_OPT_IN: http   # emite http.server.request.duration (seg) con atributos http.request.method / http.response.status_code / http.route
     env_file: .env
     depends_on:
       db:
