@@ -1,4 +1,6 @@
 import { activeRequests } from './infrastructure/telemetry.js';
+import { trace, context } from '@opentelemetry/api';
+import { getRPCMetadata } from '@opentelemetry/core';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { PostgresMemberRepository } from './infrastructure/PostgresMemberRepository.js';
@@ -66,14 +68,39 @@ export function buildApp() {
         },
     });
 
-    // Tracking de requests activas
-    server.addHook('onRequest', (request, reply, done) => {
-        activeRequests.add(1);
+    // Telemetry and active requests tracking hooks
+    server.addHook('preHandler', (request, reply, done) => {
+        const route = request.routeOptions?.url || 'unknown';
+        
+        // 1. Manually set http.route to fix missing route names in HTTP traces and metrics.
+        //    - The span attribute fixes the route name on traces.
+        //    - rpcMetadata.route is what @opentelemetry/instrumentation-http reads to build the
+        //      http.route LABEL on the http.server.request.duration metric (used by Grafana panel 6).
+        //      Setting only the span attribute does NOT reach the metric, so we set both.
+        if (request.routeOptions?.url) {
+            const span = trace.getActiveSpan();
+            if (span) {
+                span.setAttribute('http.route', request.routeOptions.url);
+            }
+            const rpcMetadata = getRPCMetadata(context.active());
+            if (rpcMetadata) {
+                rpcMetadata.route = request.routeOptions.url;
+            }
+        }
+        
+        // 2. Track active request and mark it as incremented
+        activeRequests.add(1, { route });
+        (request as any).activeRequestIncremented = true;
+        
         done();
     });
 
     server.addHook('onResponse', (request, reply, done) => {
-        activeRequests.add(-1);
+        // Only decrement if it was successfully incremented for this request
+        if ((request as any).activeRequestIncremented) {
+            const route = request.routeOptions?.url || 'unknown';
+            activeRequests.add(-1, { route });
+        }
         done();
     });
 
