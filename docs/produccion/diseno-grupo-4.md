@@ -462,6 +462,7 @@ El compose define **3 servicios** con dependencias ordenadas: `db` arranca prime
 | Servicio | Imagen | Puerto expuesto | Propósito |
 |----------|--------|-----------------|-----------|
 | `db` | `postgres:16-alpine` | — (solo red interna) | Persistencia de datos PostgreSQL |
+| `otel-collector` | `otel/opentelemetry-collector-contrib:latest` | 9464 (Prometheus), 8888 (telemetría interna) | Recolección y exportación de métricas OpenTelemetry |
 | `api` | `packages/api/Dockerfile.prod` | 3000 | Endpoints REST de la aplicación |
 | `web` | `packages/web/Dockerfile.prod` | 80 | Frontend compilado servido con Nginx |
 
