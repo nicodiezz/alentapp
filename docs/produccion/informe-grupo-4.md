@@ -68,17 +68,17 @@ Se utilizó el protocolo OTLP con el collector de Open Telemetry para más tarde
 
 #### OpenTelemetry
 
-**Decisión:**
-
-**Por qué:**
+| Problema | Solución |
+| -------- | --------- |
+| La implementación exportaba métricas directamente a Prometheus en lugar de usar el protocolo OTLP con un collector intermedio, lo que no correspondía con el diseño. | Se reemplazó el exporter por `OTLPMetricExporter` apuntando a `otel-collector:4317` y se agregó el servicio `otel-collector` al `docker-compose.prod.yml`, que recibe las métricas por OTLP y las reexpone a Prometheus. |
 
 ---
 
 #### Métricas RED
 
-**Decisión:**
-
-**Por qué:**
+| Problema | Solución |
+| -------- | --------- |
+| Las métricas RED estaban instrumentadas manualmente en cada controller con contadores propios, cuando el diseño especificaba que debían obtenerse por auto-instrumentación. Además, los nombres y labels que generaban no coincidían con el estándar de OpenTelemetry. | Se eliminó la instrumentación manual de los controllers. Las métricas RED pasan a ser responsabilidad de la auto-instrumentación de OpenTelemetry, que las expone con los nombres y labels estándar. Se conservó la instrumentación manual únicamente para las dos métricas adicionales: `process.memory.usage` y `http.requests.active`. |
 
 ---
 
