@@ -39,15 +39,15 @@ El Dockerfile se compone de **3 etapas secuenciales**, cada una con una responsa
 
 | Etapa | Nombre | Base | Propósito |
 |-------|--------|------|-----------|
-| Stage 1 | `deps` | `node:22-alpine` | Instalar todas las dependencias necesarias para el build (`npm ci`) |
-| Stage 2 | `build` | `node:22-alpine` | Compilar TypeScript, generar Prisma Client |
-| Stage 3 | `runtime` | `node:22-alpine` | Solo runtime: JS compilado + node_modules prod + usuario no-root |
+| Stage 1 | `deps` | `node:22-alpine` | Instalar y optimizar únicamente las dependencias de producción (`npm ci --omit=dev ...`) |
+| Stage 2 | `build` | `node:22-alpine` | Instalar devDependencies (`npm ci`), compilar TypeScript, generar Prisma Client |
+| Stage 3 | `runtime` | `node:22-alpine` | Solo runtime: JS compilado + node_modules prod de Stage 1 (sin npm/npx) |
 
 ##### Detalle de cada etapa
 
 **Stage 1 — `deps`**
 
-Instala todas las dependencias del monorepo. Se copian primero los `package.json` de cada workspace y el `package-lock.json` para aprovechar el cache de capas de Docker: si los archivos de dependencias no cambian, la capa de `npm ci` se reutiliza en builds posteriores.
+Instala únicamente las dependencias de producción de la API y poda las herramientas innecesarias (como CLI de Prisma, TypeScript, etc.) para optimizar el almacenamiento en caché y reducir el tamaño final.
 
 ```dockerfile
 FROM node:22-alpine AS deps
@@ -55,44 +55,74 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/api/package.json ./packages/api/
 COPY packages/shared/package.json ./packages/shared/
-RUN npm ci
+RUN npm ci --omit=dev --omit=peer --workspace=@alentapp/api --include-workspace-root=false && \
+    npm cache clean --force && \
+    rm -rf \
+        node_modules/.bin \
+        node_modules/@prisma/client \
+        node_modules/@prisma/config \
+        node_modules/@prisma/dev \
+        node_modules/@prisma/engines \
+        node_modules/@prisma/fetch-engine \
+        node_modules/@prisma/get-platform \
+        node_modules/@prisma/query-plan-executor \
+        node_modules/@prisma/studio-core \
+        node_modules/@radix-ui \
+        node_modules/chart.js \
+        node_modules/mysql2 \
+        node_modules/postgres \
+        node_modules/prisma \
+        node_modules/react \
+        node_modules/react-dom \
+        node_modules/typescript
 ```
 
-Se instalan **todas** las dependencias (incluyendo devDependencies) porque la etapa `build` necesita herramientas como `prisma` CLI y `typescript` para compilar.
+Se instalan únicamente las dependencias productivas para que la etapa runtime final las copie directamente, evitando volver a correr `npm ci` en etapas posteriores y previniendo la invalidación del caché de Docker cuando cambie el código fuente.
 
 **Stage 2 — `build`**
 
-Compila el código TypeScript a JavaScript y genera el cliente de Prisma. Copia el `node_modules` completo del Stage 1 y el código fuente, ejecuta las herramientas de build, y produce el directorio `dist/` con el JS compilado.
+Instala todas las dependencias (incluyendo devDependencies), genera el cliente de Prisma y compila el código TypeScript a JavaScript en el directorio `dist/`.
 
 ```dockerfile
 FROM node:22-alpine AS build
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY package.json package-lock.json ./
+COPY packages/api/package.json ./packages/api/
+COPY packages/shared/package.json ./packages/shared/
+RUN npm ci
 COPY . .
 RUN npx prisma generate --config packages/api/prisma.config.ts
 RUN npx tsc -p tsconfig.build.json
 ```
 
+Se instala el set completo de dependencias en esta etapa aislada para poder compilar y generar el cliente de Prisma. El output resultante se guarda en la carpeta `dist/`.
+
 El cliente Prisma se genera en `packages/api/src/generated/client/` (TypeScript). Luego `tsc` compila todo — código fuente + cliente generado — a JavaScript en `dist/`.
 
 **Stage 3 — `runtime`**
 
-Imagen final mínima. Copia solo el JS compilado (`dist/`), los `package.json` necesarios para que npm resuelva las workspaces, e instala **solo** dependencias de producción. No contiene herramientas de build, testing ni código fuente.
+Imagen final mínima. Copia el JS compilado (`dist/`) desde la etapa `build` y el directorio `node_modules` optimizado desde la etapa `deps`. No contiene herramientas de build, testing, código fuente, ni herramientas de package management como `npm` o `npx`, mejorando la seguridad.
 
 ```dockerfile
 FROM node:22-alpine AS runtime
 WORKDIR /app
 
-# Copiar estructura de workspaces para que npm resuelva los links
+# Copiar estructura de workspaces
 COPY package.json package-lock.json ./
 COPY packages/api/package.json ./packages/api/
 COPY packages/shared/package.json ./packages/shared/
 
+# Copiar node_modules ya filtrados desde la etapa deps
+COPY --from=deps /app/node_modules ./node_modules
+
 # Copiar JS compilado (incluye Prisma Client generado)
 COPY --from=build /app/dist ./dist
 
-# Instalar SOLO dependencias de producción
-RUN npm ci --omit=dev
+# Eliminar npm/npx para mayor seguridad
+RUN rm -rf \
+        /usr/local/bin/npm \
+        /usr/local/bin/npx \
+        /usr/local/lib/node_modules/npm
 
 # Seguridad: usuario no-root
 RUN addgroup --system --gid 1001 appgroup && \
@@ -100,9 +130,10 @@ RUN addgroup --system --gid 1001 appgroup && \
 USER appuser
 
 EXPOSE 3000
+EXPOSE 9464
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/health || exit 1
 
 CMD ["node", "dist/packages/api/src/app.js"]
 ```
@@ -141,16 +172,17 @@ La imagen `node:22-alpine` ya trae el usuario `node`, pero se crea un usuario de
 
 Se configura un healthcheck que verifica periódicamente si la API está respondiendo. Se realiza un `GET` a `/health` (`localhost:3000/health`) cada 30 segundos, con un timeout de 5 segundos y 3 reintentos antes de marcar el contenedor como `unhealthy`. Se incluye un período de gracia de 10 segundos al inicio para darle tiempo a Fastify a levantarse. Se usa `wget` en lugar de `curl` porque Alpine lo incluye por defecto.
 
-##### Exclusión de herramientas de build
+##### Exclusión de herramientas de build y runtime hardening
 
-La imagen runtime **no contiene** herramientas de build que solo fueron necesarias en las etapas anteriores:
+La imagen runtime **no contiene** herramientas de build ni gestores de paquetes que solo fueron necesarios en las etapas anteriores:
 
 - `tsc` / `typescript` — compilador, solo necesario en la etapa `build`
 - `npx` / `prisma` CLI — generador de cliente, solo necesario en `build`
 - `tsx` — transpilador de desarrollo
 - `vitest` — framework de testing
+- `npm` / `npx` — gestores de paquetes (removidos de la etapa runtime final para reducir la superficie de ataque)
 
-Nota: `npm` permanece en la imagen porque se utiliza en la etapa `runtime` para instalar dependencias de producción (`npm ci --omit=dev`). Las etapas `deps` y `build` se descartan, por lo que sus herramientas no se copian a la imagen final.
+Nota: Las dependencias productivas se instalan y podan en el Stage 1 (`deps`) y se copian directamente al final (`runtime`), por lo que no es necesario contar con `npm` o ejecutar instalaciones en el contenedor final.
 
 ##### .dockerignore
 
