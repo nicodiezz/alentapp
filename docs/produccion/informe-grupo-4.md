@@ -1,21 +1,21 @@
 # Fase 4: Verificar y entregar
 
-**Grupo:** 4  
-**Fecha:** 07/06/2026  
+**Grupo:** 4
+**Fecha:** 07/06/2026
 **Actividad:** TP Integrador - Actividad 4: Preparando para Producción
 
 ---
 
 ## 4.1. Verificación técnica
 
-| Métrica | Antes (desarrollo) | Después (producción) | Mejora |
-|---|---|---|---|
-| Tamaño imagen API | | | |
-| Tamaño imagen Web | | | |
-| Tiempo de startup API | | | |
-| Memoria API (idle) | | | |
-| Endpoints accesibles | | | |
-| Frontend vía nginx | — | | |
+| Métrica              | Antes (desarrollo) | Después (producción) | Mejora            |
+| --------------------- | ------------------ | ---------------------- | ----------------- |
+| Tamaño imagen API    | 1.64GB             | 456MB                  | ~72% reducción   |
+| Tamaño imagen Web    |                    |                        |                   |
+| Tiempo de startup API | 53.288s            | 13.352s                | ~75% más rápido |
+| Memoria API (idle)    |                    |                        |                   |
+| Endpoints accesibles  |                    |                        |                   |
+| Frontend vía nginx   | —                 |                        |                   |
 
 ---
 
@@ -33,21 +33,21 @@
 
 **Decisión:**
 
-**Por qué:** 
+**Por qué:**
 
 ---
 
 #### Multi-stage build para el frontend (`packages/web/Dockerfile.prod`)
 
-**Decisión:** 
+**Decisión:**
 
-**Por qué:** 
+**Por qué:**
 
 ---
 
 #### Docker Compose de producción (`docker-compose.prod.yml`)
 
-**Decisión:** 
+**Decisión:**
 
 **Por qué:**
 
@@ -55,32 +55,30 @@
 
 #### OpenTelemetry
 
-**Decisión:** 
+**Decisión:**
 
-**Por qué:** 
+**Por qué:**
 
 ---
 
 #### Métricas RED
 
-**Decisión:** 
+**Decisión:**
 
-**Por qué:** 
+**Por qué:**
 
 ---
 
 ### Problemas encontrados
 
 | Problema | Solución |
-|----------|---------|
-| | |
-| | |
-| | |
+| -------- | --------- |
+|          |           |
+|          |           |
+|          |           |
 
 ---
 
 ### Capturas de pantalla
 
-
 *(Completar con capturas de pantalla de dashboard RED)*
-
