@@ -23,7 +23,20 @@
 
 ### Arquitectura final
 
-*(Completar)*
+Open Telemetry instrumenta a la API por dos métodos:
+1. por auto instrumentación para las métricas RED
+2. por instrumentación manual para las otras 2 métricas
+Exporta la telemetría vía OTLP hacia el colector de open telemetry en el puerto 4317.
+El collector recibe las métricas y las reexpone a Prometheus en el puerto 9464
+Prometheus hace scrap cada 15s al endpoint del collector y almacena las métricas. Luego las expone en el puerto 9090.
+Grafana consulta a Prometheus como datasource y muestra los 6 paneles en el puerto 3001
+
+Flujo de extremo a extremo: `API :3000 → (OTLP/gRPC) Collector :4317 → (expone) :9464 → (scrape) Prometheus :9090 → (query) Grafana :3001`.
+
+Se utilizó auto instrumentación para las métricas RED para evitar escribir código ya implementado.
+Se utilizó el protocolo OTLP con el collector de Open Telemetry para más tarde poder cambiar más fácilmente de datasource o combinar con otros.
+
+![Diagrama del flujo de observabilidad](/docs/produccion/assets/Group%2033303.png)
 
 ---
 
@@ -81,4 +94,4 @@
 
 ### Capturas de pantalla
 
-*(Completar con capturas de pantalla de dashboard RED)*
+![Captura de pantalla de Grafana](/docs/produccion/assets/IMG-20260607-WA0022.jpg)
