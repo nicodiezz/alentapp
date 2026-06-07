@@ -1,4 +1,5 @@
 import { activeRequests } from './infrastructure/telemetry.js';
+import { trace } from '@opentelemetry/api';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { PostgresMemberRepository } from './infrastructure/PostgresMemberRepository.js';
@@ -66,14 +67,29 @@ export function buildApp() {
         },
     });
 
-    // Tracking de requests activas
-    server.addHook('onRequest', (request, reply, done) => {
-        activeRequests.add(1);
+    // Telemetry and active requests tracking hooks
+    server.addHook('preHandler', (request, reply, done) => {
+        const route = request.routeOptions?.url || 'unknown';
+        
+        // 1. Manually set http.route on the active span to fix missing route names in HTTP metrics
+        const span = trace.getActiveSpan();
+        if (span && request.routeOptions?.url) {
+            span.setAttribute('http.route', request.routeOptions.url);
+        }
+        
+        // 2. Track active request and mark it as incremented
+        activeRequests.add(1, { route });
+        (request as any).activeRequestIncremented = true;
+        
         done();
     });
 
     server.addHook('onResponse', (request, reply, done) => {
-        activeRequests.add(-1);
+        // Only decrement if it was successfully incremented for this request
+        if ((request as any).activeRequestIncremented) {
+            const route = request.routeOptions?.url || 'unknown';
+            activeRequests.add(-1, { route });
+        }
         done();
     });
 
