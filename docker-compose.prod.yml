@@ -1,18 +1,4 @@
 services:
-  migrate:
-    build:
-      context: .
-      dockerfile: packages/api/Dockerfile.prod
-      target: build
-    command: ["npx", "prisma", "migrate", "deploy", "--config", "packages/api/prisma.config.ts"]
-    env_file: .env
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: "no"
-    networks:
-      - app-network
-  
   db:
     image: postgres:16-alpine
     env_file: .env
@@ -65,8 +51,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
       otel-collector:
         condition: service_started
     healthcheck:
