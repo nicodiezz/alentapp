@@ -73,7 +73,7 @@
 
 | Problema | Solución |
 | -------- | --------- |
-|          |           |
+| Al arrancar el stack de producción, las migraciones de base de datos no se aplicaban porque no existía un servicio dedicado para ejecutarlas | Se decidió no agregar un servicio `migrate` al `docker-compose.prod.yml`. En su lugar, las migraciones se ejecutan automáticamente como parte del script de deploy, antes de levantar los contenedores |
 |          |           |
 |          |           |
 
