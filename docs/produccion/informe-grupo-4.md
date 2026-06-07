@@ -11,7 +11,7 @@
 | Métrica              | Antes (desarrollo) | Después (producción) | Mejora            |
 | --------------------- | ------------------ | ---------------------- | ----------------- |
 | Tamaño imagen API    | 1.64GB             | 456MB                  | ~72% reducción   |
-| Tamaño imagen Web    |                    |                        |                   |
+| Tamaño imagen Web | 861 MB | 93.7 MB | ~89% reducción|
 | Tiempo de startup API | 53.288s            | 13.352s                | ~75% más rápido |
 | Memoria API (idle) | 155.3MiB (sin límite) | 43.11MiB / 512MiB (8.42%) | ~72% reducción |
 | Endpoints accesibles | curl :3000/api/v1/socios | curl :3000/api/v1/socios | — |
@@ -39,9 +39,9 @@
 
 #### Multi-stage build para el frontend (`packages/web/Dockerfile.prod`)
 
-**Decisión:**
+**Decisión:** Se implementó un multi-stage build de 3 etapas (`deps`, `build`, `runtime`). La etapa `deps` instala todas las dependencias con `npm ci`, `build` compila el proyecto con Vite generando los assets en `packages/web/dist/`, y `runtime` es una imagen `nginx:stable-alpine` que únicamente contiene Nginx y los archivos estáticos compilados (sin Node.js, sin el código fuente ni las herramientas de build). Se configuró `USER nginx` para ejecutar el proceso como usuario no-root, incorporando al compose el `tmpfs` necesario para los directorios temporales de Nginx y la capability `NET_BIND_SERVICE` para bindear el puerto 80.
 
-**Por qué:**
+**Por qué:** El servidor de desarrollo de Vite no es optimo para producción ya que no maneja conexiones concurrentes de forma eficiente ni ofrece compresión gzip, caché de assets ni security headers de forma nativa. Nginx resuelve todos esos aspectos. Usar `npm ci` en lugar de `npm install` (presente en el Dockerfile de desarrollo) garantiza instalaciones determinísticas usando exactamente las versiones indicadas. La caché agresiva (1 año) es segura porque Vite incluye hashes de contenido en los nombres de los archivos compilados, de forma que cualquier modificacion en el archivo produce un nombre de archivo distinto y el navegador descarga la versión nueva de asi serlo.
 
 ---
 
@@ -74,7 +74,7 @@
 | Problema | Solución |
 | -------- | --------- |
 | Al arrancar el stack de producción, las migraciones de base de datos no se aplicaban porque no existía un servicio dedicado para ejecutarlas | Se decidió no agregar un servicio `migrate` al `docker-compose.prod.yml`. En su lugar, las migraciones se ejecutan automáticamente como parte del script de deploy, antes de levantar los contenedores |
-|          |           |
+| `read_only: true` combinado con `USER nginx` hace que Nginx falle al intentar crear sus directorios temporales (`/var/cache/nginx/client_temp`, `/var/run`), produciendo el error `mkdir() failed (13: Permission denied)` al arrancar el contenedor. | Se agregaron entradas `tmpfs` en el servicio `web` del `docker-compose.prod.yml` para `/var/cache/nginx` y `/var/run`, lo que permite a Nginx escribir en esos paths en memoria sin romper el filesystem de solo lectura. |
 |          |           |
 
 ---
