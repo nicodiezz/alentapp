@@ -31,9 +31,9 @@
 
 #### Multi-stage build para la API (`packages/api/Dockerfile.prod`)
 
-**Decisión:**
+**Decisión:** se decidió usar un multi-stage build para la API de `packages/api/Dockerfile.prod`, separando la instalación de dependencias productivas, la generación y compilación del código, y la imagen runtime mínima que ejecuta solo el JavaScript compilado.
 
-**Por qué:**
+**Por qué:** esta implementación reduce el tamaño de la imagen final, mejora la seguridad y acelera el arranque en producción. La primera etapa (`deps`) instala solo dependencias de producción y poda tooling innecesario, lo que evita que devDependencies como TypeScript, Prisma CLI o pruebas terminen en la imagen final. La segunda etapa (`build`) instala devDependencies necesarias para generar el cliente Prisma y compilar TypeScript sobre el código fuente. La etapa final (`runtime`) copia únicamente `node_modules` productivos y el `dist/` compilado, elimina `npm`/`npx`, expone solo los puertos necesarios y ejecuta la aplicación como un usuario no-root.
 
 ---
 
