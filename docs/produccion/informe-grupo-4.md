@@ -13,9 +13,9 @@
 | Tamaño imagen API    | 1.64GB             | 456MB                  | ~72% reducción   |
 | Tamaño imagen Web    |                    |                        |                   |
 | Tiempo de startup API | 53.288s            | 13.352s                | ~75% más rápido |
-| Memoria API (idle)    |                    |                        |                   |
-| Endpoints accesibles  |                    |                        |                   |
-| Frontend vía nginx   | —                 |                        |                   |
+| Memoria API (idle) | 155.3MiB (sin límite) | 43.11MiB / 512MiB (8.42%) | ~72% reducción |
+| Endpoints accesibles | curl :3000/api/v1/socios | curl :3000/api/v1/socios | — |
+| Frontend vía nginx | — | curl localhost/ | Servido por nginx |
 
 ---
 
