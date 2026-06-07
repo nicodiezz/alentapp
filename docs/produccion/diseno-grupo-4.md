@@ -770,7 +770,7 @@ import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc'
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node'
 
 // Configuración a implementar:
-// 1. OTLPMetricExporter en el puerto específicado en el .env 
+// 1. OTLPMetricExporter en el puerto 9464 
 // 2. Auto-instrumentaciones para HTTP y Fastify
 // 3. Métricas manuales: process.memory.usage con ObservableGauge y http.requests.active con UpDownCounter
 ```
