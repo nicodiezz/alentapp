@@ -1,5 +1,6 @@
 import { activeRequests } from './infrastructure/telemetry.js';
-import { trace } from '@opentelemetry/api';
+import { trace, context } from '@opentelemetry/api';
+import { getRPCMetadata } from '@opentelemetry/core';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { PostgresMemberRepository } from './infrastructure/PostgresMemberRepository.js';
@@ -71,10 +72,20 @@ export function buildApp() {
     server.addHook('preHandler', (request, reply, done) => {
         const route = request.routeOptions?.url || 'unknown';
         
-        // 1. Manually set http.route on the active span to fix missing route names in HTTP metrics
-        const span = trace.getActiveSpan();
-        if (span && request.routeOptions?.url) {
-            span.setAttribute('http.route', request.routeOptions.url);
+        // 1. Manually set http.route to fix missing route names in HTTP traces and metrics.
+        //    - The span attribute fixes the route name on traces.
+        //    - rpcMetadata.route is what @opentelemetry/instrumentation-http reads to build the
+        //      http.route LABEL on the http.server.request.duration metric (used by Grafana panel 6).
+        //      Setting only the span attribute does NOT reach the metric, so we set both.
+        if (request.routeOptions?.url) {
+            const span = trace.getActiveSpan();
+            if (span) {
+                span.setAttribute('http.route', request.routeOptions.url);
+            }
+            const rpcMetadata = getRPCMetadata(context.active());
+            if (rpcMetadata) {
+                rpcMetadata.route = request.routeOptions.url;
+            }
         }
         
         // 2. Track active request and mark it as incremented

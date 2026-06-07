@@ -205,7 +205,7 @@
       },
       "options": {
         "showHeader": true,
-        "sortBy": [{ "displayName": "Value", "desc": true }]
+        "sortBy": [{ "displayName": "requests/s", "desc": true }]
       },
       "targets": [
         {
