@@ -47,9 +47,9 @@
 
 #### Docker Compose de producción (`docker-compose.prod.yml`)
 
-**Decisión:**
+**Decisión**: se configuró un docker-compose.prod.yml separado del de desarrollo con cinco ajustes principales: límites de recursos (deploy.resources.limits), hardening de seguridad (read_only, cap_drop: ALL, no-new-privileges), healthchecks para API y frontend, rotación de logs (json-file con max-size/max-file) y credenciales externalizadas en env_file en lugar de valores hardcodeados.
 
-**Por qué:**
+**Por qué**: en desarrollo el compose prioriza comodidad (hot-reload, puertos expuestos, credenciales fijas), pero en producción cada servicio debe estar aislado y acotado. Los límites de CPU y memoria evitan que un contenedor consuma todos los recursos del host. El modo read_only con tmpfs solo para los directorios que nginx necesita escribir reduce la superficie de ataque. Los healthchecks permiten que Docker orqueste el arranque en orden correcto y detecte servicios caídos. La rotación de logs evita que los archivos JSON del driver crezcan sin límite en disco.
 
 ---
 
