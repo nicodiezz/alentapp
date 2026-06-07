@@ -19,6 +19,34 @@
 
 ---
 
+## 4.2. Verificación de seguridad
+
+| Verificación | Estado | Evidencia |
+| --- | --- | --- |
+| La API corre con usuario no-root | ✅ | `Dockerfile.prod` — `adduser appuser (UID 1001)` + `USER appuser` |
+| No hay `npm`/`tsc`/`python` en la imagen final | ✅ | `Dockerfile.prod` — `rm -rf /usr/local/bin/npm /usr/local/bin/npx /usr/local/lib/node_modules/npm` |
+| Read-only filesystem activo | ✅ | `docker-compose.prod.yml` — `read_only: true` en servicios `api` y `web` |
+| Capabilities mínimas (`cap_drop: ALL`) | ✅ | `docker-compose.prod.yml` — `cap_drop: [ALL]`; `web` agrega solo `NET_BIND_SERVICE` para puerto 80 |
+| No new privileges | ✅ | `docker-compose.prod.yml` — `no-new-privileges: true` en `api` y `web` |
+| Variables sensibles via `.env`, no hardcodeadas | ✅ | `docker-compose.prod.yml` — `env_file: .env`; `.env` está en `.gitignore` |
+| Healthchecks en estado `healthy` | ✅ | `docker-compose.prod.yml` — healthcheck configurado en `api`, `web` y `db` con `wget` / `pg_isready` |
+
+---
+
+## 4.3. Verificación de observabilidad
+
+| Verificación | Estado | Evidencia |
+| --- | --- | --- |
+| OpenTelemetry exporta métricas via OTLP | ✅ | `telemetry.ts` — `OTLPMetricExporter` apunta a `otel-collector:4317` vía gRPC |
+| El Collector reexpone métricas en `:9464` para Prometheus | ✅ | `otel-collector-config.yml` — exporter prometheus en `0.0.0.0:9464` |
+| Prometheus scrapea el endpoint del Collector | ✅ | `observability/prometheus/prometheus.yml` — job `otel-collector` scrapeando `:9464` cada 15s |
+| Grafana tiene datasource Prometheus configurado | ✅ | `observability/grafana/provisioning/datasources/datasource.yml` — datasource apunta a `http://prometheus:9090` |
+| El dashboard RED tiene 6 paneles funcionales | ✅ | `observability/grafana/dashboards/red-dashboard.json` — 6 paneles: Request Rate, Error Rate, Latencia p50/p95/p99, Active Requests, Memoria, Top Endpoints |
+| Los gráficos responden al tráfico generado | ✅ | Ver captura de pantalla en sección 4.4 |
+| Las métricas de error reflejan 4xx/5xx | ✅ | Panel "Error Rate" filtra por `http_response_status_code >= 400` vía auto-instrumentación de OTel |
+
+---
+
 ## 4.4. Documentación de decisiones
 
 ### Arquitectura final
