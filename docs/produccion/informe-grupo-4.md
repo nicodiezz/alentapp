@@ -123,3 +123,9 @@ Se utilizó el protocolo OTLP con el collector de Open Telemetry para más tarde
 ### Capturas de pantalla
 
 ![Captura de pantalla de Grafana](/docs/produccion/assets/IMG-20260607-WA0022.jpg)
+
+---
+
+### Presentación
+
+[Link a la presentación](/docs/produccion/assets/Presentacion.pdf)
